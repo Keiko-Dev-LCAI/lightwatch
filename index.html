@@ -211,6 +211,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:18px}
 .empty-icon{font-size:48px;margin-bottom:16px}
 
+/* Spinner */
+@keyframes spin{to{transform:rotate(360deg)}}
+
 /* Notification toast */
 .toast{position:fixed;bottom:24px;right:20px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px 20px;font-size:17px;z-index:9999;transform:translateX(calc(100% + 40px));transition:transform .35s ease;max-width:min(340px,calc(100vw - 260px));box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast.show{transform:translateX(0)}
@@ -506,6 +509,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <div class="toast" id="toast"></div>
 
 <script>
+// ===== BACKEND =====
+const BACKEND = 'https://web-production-c7177.up.railway.app';
+
 // ===== DATA =====
 
 const D = {
@@ -901,17 +907,9 @@ function addRule() {
   toast('Rule added — AIVM will apply on next cycle');
 }
 
-function selectReport(type) {
-  selectedReport = type;
-  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
-  document.getElementById('rtype-' + type).classList.add('sel');
-
+function renderReportHtml(type, e, content, aiGenerated) {
   const names = {bank:'Bank / Loan Application', regulator:'Regulator / Inspector', auditor:'Auditor Report', exec:'Executive Summary', govt:'Government Contract Package', investor:'Investor / Board Report'};
-  const e = D[current];
-  const content = e.reports[type] || 'Report not available for this entity type.';
   const today = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
-
-  // Format multi-line content
   const lines = content.split('\n');
   let bodyHtml = '';
   if (lines.length > 1) {
@@ -928,11 +926,16 @@ function selectReport(type) {
   } else {
     bodyHtml = `<div class="report-sec"><p style="font-size:11px;line-height:1.7">${content}</p></div>`;
   }
-
+  const badge = aiGenerated
+    ? `<span style="background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple);border-radius:6px;padding:3px 10px;font-size:13px;font-weight:700">✨ AIVM Generated</span>`
+    : `<span style="background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue);border-radius:6px;padding:3px 10px;font-size:13px;font-weight:700">Demo Data</span>`;
   document.getElementById('reportOutput').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
       <div>
-        <h3 style="font-size:12px;font-weight:800">${names[type]}</h3>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+          <h3 style="font-size:12px;font-weight:800">${names[type]}</h3>
+          ${badge}
+        </div>
         <div class="report-subtitle">
           <span>${e.name}</span>
           <span style="color:var(--border2)">|</span>
@@ -948,6 +951,55 @@ function selectReport(type) {
       🔒 Data sourced from Lightchain mainnet — all figures cryptographically verified and tamper-proof
     </div>
   `;
+}
+
+function selectReport(type) {
+  selectedReport = type;
+  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
+  document.getElementById('rtype-' + type).classList.add('sel');
+
+  const e = D[current];
+
+  // Show loading state
+  document.getElementById('reportOutput').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px">
+      <div style="width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite"></div>
+      <div style="color:var(--text2);font-size:17px">Generating AI report via AIVM…</div>
+    </div>
+  `;
+
+  // Try backend first
+  const payload = {
+    entity: {
+      name: e.name,
+      industry: e.industry,
+      monitors: e.monitors,
+      alerts: e.alerts,
+      chain: e.chain.slice(0, 10)
+    },
+    report_type: type
+  };
+
+  fetch(BACKEND + '/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.report) {
+      renderReportHtml(type, e, data.report, !data.fallback);
+      toast(data.fallback ? 'Report generated (rule-based)' : '✨ AI report generated via AIVM');
+    } else {
+      throw new Error('No report in response');
+    }
+  })
+  .catch(() => {
+    // Fallback to static demo data
+    const content = e.reports[type] || 'Report not available for this entity type.';
+    renderReportHtml(type, e, content, false);
+    toast('Using demo data — backend not reachable');
+  });
 }
 
 function toast(msg) {
