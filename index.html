@@ -173,6 +173,35 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .demo-banner{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:16px;color:var(--yellow);margin-bottom:20px}
 .verify-banner{background:var(--purple-bg);border:1px solid rgba(188,140,255,.3);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--purple);margin-bottom:14px}
 
+/* HOW IT WORKS PAGE */
+.hiw-wrap{max-width:860px;margin:0 auto}
+.hiw-hero{background:linear-gradient(135deg,rgba(88,166,255,.08),rgba(188,140,255,.08));border:1px solid rgba(88,166,255,.2);border-radius:16px;padding:28px 32px;margin-bottom:28px;text-align:center}
+.hiw-hero-title{font-size:30px;font-weight:800;margin-bottom:8px;color:var(--blue)}
+.hiw-hero-sub{font-size:15px;color:var(--text2);line-height:1.6;max-width:600px;margin:0 auto}
+.hiw-analogy{background:var(--yellow-bg);border:1px solid rgba(210,153,34,.3);border-radius:12px;padding:22px 26px;margin-bottom:28px;display:flex;gap:18px;align-items:flex-start}
+.hiw-analogy-icon{font-size:36px;flex-shrink:0}
+.hiw-analogy-text{font-size:15px;line-height:1.7;color:var(--text)}
+.hiw-analogy-text strong{color:var(--yellow)}
+.hiw-layers{display:grid;gap:14px;margin-bottom:28px}
+.hiw-layer{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;display:flex;gap:20px;align-items:flex-start}
+.hiw-layer-num{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex-shrink:0;margin-top:2px}
+.layer-1 .hiw-layer-num{background:rgba(63,185,80,.15);color:var(--green)}
+.layer-2 .hiw-layer-num{background:var(--blue-bg);color:var(--blue)}
+.layer-3 .hiw-layer-num{background:var(--purple-bg);color:var(--purple)}
+.hiw-layer-body h3{font-size:18px;font-weight:800;margin-bottom:6px}
+.hiw-layer-body p{font-size:14px;color:var(--text2);line-height:1.6}
+.hiw-layer-body .hiw-tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 10px;border-radius:20px;margin-bottom:8px}
+.layer-1 .hiw-tag{background:rgba(63,185,80,.15);color:var(--green)}
+.layer-2 .hiw-tag{background:var(--blue-bg);color:var(--blue)}
+.layer-3 .hiw-tag{background:var(--purple-bg);color:var(--purple)}
+.hiw-screens{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.hiw-screen{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.hiw-screen-icon{font-size:22px;margin-bottom:8px}
+.hiw-screen-title{font-size:15px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.hiw-screen-desc{font-size:13px;color:var(--text2);line-height:1.5}
+.hiw-why{background:var(--purple-bg);border:1px solid rgba(188,140,255,.3);border-radius:12px;padding:22px 26px;display:flex;gap:18px;align-items:flex-start}
+.hiw-section-label{font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
 /* SCROLLBAR */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -235,6 +264,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div class="nav" onclick="showSection('portfolio')" id="nav-portfolio">
       <span class="nav-icon">🏢</span> <span id="portfolioNavLabel">Locations</span>
+    </div>
+    <div class="nav" onclick="showSection('howto')" id="nav-howto">
+      <span class="nav-icon">💡</span> How It Works
     </div>
     <div class="sidebar-footer">
       <div style="color:var(--text3);font-size:7px;margin-bottom:4px">Powered by</div>
@@ -361,6 +393,99 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="report-placeholder">
           <div>📄</div>
           <div>Select a report type above to generate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== HOW IT WORKS ===== -->
+    <div class="section" id="section-howto">
+      <div class="hiw-wrap">
+        <div class="sec-header" style="margin-bottom:24px">
+          <h2 class="sec-title">How LightWatch Works</h2>
+        </div>
+
+        <div class="hiw-hero">
+          <div class="hiw-hero-title">⚡ One add-on. Every industry. Zero disruption.</div>
+          <div class="hiw-hero-sub">LightWatch sits on top of whatever software you already use — manufacturing systems, POS systems, property management software — and adds AI monitoring and blockchain verification without changing how you operate.</div>
+        </div>
+
+        <div class="hiw-analogy">
+          <div class="hiw-analogy-icon">🚗</div>
+          <div class="hiw-analogy-text">
+            <strong>Think about TPMS — tire pressure sensors.</strong> When your car's low-pressure light comes on, it didn't rebuild your wheels. A small sensor was added that monitors what's already there and alerts you when something is off.<br><br>
+            LightWatch is that sensor for your business. <strong>We don't replace your software. We don't change how you work. We add a monitoring layer on top.</strong> When something goes wrong — or is about to — you know immediately.
+          </div>
+        </div>
+
+        <div class="hiw-section-label">The Three Layers</div>
+        <div class="hiw-layers">
+          <div class="hiw-layer layer-1">
+            <div class="hiw-layer-num">1</div>
+            <div class="hiw-layer-body">
+              <div class="hiw-tag">Your existing systems</div>
+              <h3>What you already have — unchanged</h3>
+              <p>Your factory floor systems, your restaurant POS, your property management software, your financial records. LightWatch connects to these and reads from them. You don't change any of your current workflows, software, or equipment. Everything you already paid for keeps working exactly as it does today.</p>
+            </div>
+          </div>
+          <div class="hiw-layer layer-2">
+            <div class="hiw-layer-num">2</div>
+            <div class="hiw-layer-body">
+              <div class="hiw-tag">AIVM — inside your network</div>
+              <h3>AI that watches for what humans miss</h3>
+              <p>Our AI model runs inside your network and monitors your data continuously. It knows the rules you've set in plain English ("Alert if the cooler goes above 41°F") and learns your normal patterns over time. When something drifts or spikes — it flags it immediately and notifies the right people. <strong>Your raw data never leaves your building.</strong> Only the AI's conclusions go anywhere.</p>
+            </div>
+          </div>
+          <div class="hiw-layer layer-3">
+            <div class="hiw-layer-num">3</div>
+            <div class="hiw-layer-body">
+              <div class="hiw-tag">Lightchain — public blockchain</div>
+              <h3>A timestamp no one can argue with</h3>
+              <p>When something important happens — an alert fires, a rule changes, a daily snapshot is taken — a permanent record is written to the Lightchain blockchain. This timestamp is cryptographically sealed. It can't be edited, backdated, or deleted. Your bank, your regulator, your auditor, your insurance company — <strong>anyone can independently verify it without asking you for anything.</strong></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hiw-section-label">What Each Screen Shows</div>
+        <div class="hiw-screens">
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">📊</div>
+            <div class="hiw-screen-title">Dashboard</div>
+            <div class="hiw-screen-desc">Live readings from every monitor point. Watch your data update in real time — temperatures, throughput, payment status, whatever matters for your business.</div>
+          </div>
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">🚨</div>
+            <div class="hiw-screen-title">Alerts</div>
+            <div class="hiw-screen-desc">When a rule triggers, the alert appears here with exactly what happened, who was notified, and the blockchain timestamp proving when it was detected.</div>
+          </div>
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">📋</div>
+            <div class="hiw-screen-title">Rules</div>
+            <div class="hiw-screen-desc">The plain-English rules AIVM follows. You write them like you're telling a team member what to watch for. Add or change rules anytime — every change is logged on-chain.</div>
+          </div>
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">🔗</div>
+            <div class="hiw-screen-title">Blockchain Log</div>
+            <div class="hiw-screen-desc">The permanent audit trail. Every alert, every rule change, every daily snapshot — all with blockchain hashes that can be independently verified at any time.</div>
+          </div>
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">📄</div>
+            <div class="hiw-screen-title">Reports</div>
+            <div class="hiw-screen-desc">Same data, different audience. Pick who's asking — your bank, your regulator, your board — and LightWatch generates the right format automatically.</div>
+          </div>
+          <div class="hiw-screen">
+            <div class="hiw-screen-icon">🏢</div>
+            <div class="hiw-screen-title">Locations / Portfolio</div>
+            <div class="hiw-screen-desc">A bird's-eye view of all your properties, sites, or operations — all statuses at a glance. Switch companies at the top to see any client in your portfolio.</div>
+          </div>
+        </div>
+
+        <div class="hiw-why">
+          <div class="hiw-analogy-icon">🔒</div>
+          <div class="hiw-analogy-text">
+            <strong style="color:var(--purple)">Why does blockchain matter?</strong><br><br>
+            A spreadsheet you made says whatever you want it to say. An email timestamp can be faked. Even your own internal systems can be edited after the fact — and everyone knows it.<br><br>
+            A blockchain timestamp can't. When LightWatch writes a record to Lightchain, it's sealed. If your cooler failed at 12:03 PM, that record exists forever. You didn't decide to write it after the health inspector showed up. <strong>That's the difference between "we have a record" and "we have proof."</strong>
+          </div>
         </div>
       </div>
     </div>
@@ -730,6 +855,7 @@ function showSection(name) {
   if (name === 'blockchain') renderBlockchain();
   if (name === 'portfolio') renderPortfolio();
   if (name === 'reports') { selectedReport = null; document.querySelectorAll('.rtype').forEach(r=>r.classList.remove('sel')); document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📄</div><div>Select a report type above to generate</div></div>'; }
+  // howto is static — no render needed
 }
 
 function acknowledgeAlert(id) {
