@@ -212,7 +212,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .empty-icon{font-size:48px;margin-bottom:16px}
 
 /* Notification toast */
-.toast{position:fixed;bottom:30px;right:30px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px 20px;font-size:17px;z-index:999;transform:translateX(150%);transition:transform .3s;max-width:360px}
+.toast{position:fixed;bottom:24px;right:20px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px 20px;font-size:17px;z-index:9999;transform:translateX(calc(100% + 40px));transition:transform .35s ease;max-width:min(340px,calc(100vw - 260px));box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast.show{transform:translateX(0)}
 </style>
 </head>
