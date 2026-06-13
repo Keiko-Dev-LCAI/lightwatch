@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LightWatch — AI Monitoring & Blockchain Verification</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --sidebar-bg: #13181f;
+  --border: #21262d; --border2: #30363d;
+  --text: #e6edf3; --text2: #8b949e; --text3: #656d76;
+  --blue: #58a6ff; --green: #3fb950; --yellow: #d29922;
+  --red: #f85149; --purple: #bc8cff; --orange: #f0883e;
+  --green-bg: rgba(63,185,80,0.12); --yellow-bg: rgba(210,153,34,0.12);
+  --red-bg: rgba(248,81,73,0.12); --blue-bg: rgba(88,166,255,0.12);
+  --purple-bg: rgba(188,140,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:36px;display:flex;flex-direction:column}
+
+/* TOPBAR */
+.topbar{height:100px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:24px;flex-shrink:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px;font-size:44px;font-weight:800;color:var(--blue);white-space:nowrap}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff}
+.entity-wrap{display:flex;align-items:center;gap:10px;margin-left:auto}
+.entity-label{color:var(--text2);font-size:32px;white-space:nowrap}
+.entity-select{background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:8px 14px;border-radius:8px;font-size:36px;cursor:pointer;outline:none;min-width:260px}
+.entity-select:hover{border-color:var(--blue)}
+.overall-pill{display:flex;align-items:center;gap:8px;padding:6px 16px;border-radius:20px;font-size:32px;font-weight:700;white-space:nowrap}
+.pill-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(248,81,73,0.3)}
+.pill-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(210,153,34,0.3)}
+.pill-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(63,185,80,0.3)}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-red{background:var(--red);animation:pulse 1.2s infinite}
+.dot-yellow{background:var(--yellow)}
+.dot-green{background:var(--green)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(248,81,73,0.6)}50%{box-shadow:0 0 0 6px rgba(248,81,73,0)}}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:320px;background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;flex-shrink:0}
+.nav{display:flex;align-items:center;gap:12px;padding:18px 28px;cursor:pointer;color:var(--text2);font-size:36px;transition:all .15s;border-left:3px solid transparent;user-select:none}
+.nav:hover{background:var(--blue-bg);color:var(--text)}
+.nav.active{background:rgba(88,166,255,.1);color:var(--blue);border-left-color:var(--blue)}
+.nav-icon{font-size:40px;width:26px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:12px;padding:2px 8px;font-size:26px;font-weight:700}
+.sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border);color:var(--text3);font-size:30px;line-height:1.5}
+.chain-indicator{display:flex;align-items:center;gap:8px;color:var(--purple);font-size:28px;margin-top:6px}
+.blink{animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding:36px;position:relative}
+.section{display:none}
+.section.active{display:block}
+
+/* SECTION HEADER */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.sec-title{font-size:60px;font-weight:800}
+.live-badge{display:flex;align-items:center;gap:7px;background:var(--green-bg);color:var(--green);padding:6px 14px;border-radius:20px;font-size:30px;font-weight:700}
+.live-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:blink 1.5s infinite}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px}
+.stat-lbl{color:var(--text2);font-size:30px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-val{font-size:72px;font-weight:800;line-height:1}
+.stat-sub{color:var(--text3);font-size:30px;margin-top:6px}
+
+/* DATA TABLE */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:24px}
+.table-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-head h3{font-size:40px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{background:rgba(255,255,255,.03);padding:18px 28px;text-align:left;font-size:30px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+td{padding:22px 28px;border-bottom:1px solid var(--border);font-size:36px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:28px;font-weight:700}
+.chip-green{background:var(--green-bg);color:var(--green)}
+.chip-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.chip-red{background:var(--red-bg);color:var(--red)}
+.mono{font-family:monospace;font-size:32px;color:var(--text2)}
+
+/* ALERT CARDS */
+.alert-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:16px;border-left:5px solid var(--border2)}
+.alert-card.critical{border-left-color:var(--red)}
+.alert-card.warning{border-left-color:var(--yellow)}
+.alert-card.resolved{border-left-color:var(--green);opacity:.7}
+.al-head{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.al-icon{font-size:60px;flex-shrink:0;margin-top:2px}
+.al-title{font-size:44px;font-weight:800;line-height:1.2}
+.al-time{margin-left:auto;color:var(--text3);font-size:30px;white-space:nowrap}
+.al-field{display:flex;gap:14px;margin-bottom:10px;font-size:36px;line-height:1.4}
+.al-lbl{color:var(--text2);min-width:150px;flex-shrink:0}
+.al-val{color:var(--text);font-weight:500}
+.al-footer{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:34px;font-weight:700;transition:all .15s}
+.btn-ack{background:var(--green);color:#000}
+.btn-ack:hover{background:#52d468}
+.btn-ack:disabled{background:var(--green-bg);color:var(--green);cursor:default}
+.btn-out{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.btn-out:hover{border-color:var(--text2);color:var(--text)}
+.btn-blue{background:var(--blue);color:#000}
+.btn-blue:hover{background:#79b8ff}
+.chain-link{color:var(--purple);font-family:monospace;font-size:30px;cursor:pointer}
+.chain-link:hover{text-decoration:underline}
+
+/* RULES */
+.rules-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.rules-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px}
+.rules-panel h3{font-size:44px;font-weight:700;margin-bottom:18px}
+.rule-item{display:flex;align-items:flex-start;gap:14px;padding:14px;background:rgba(255,255,255,.03);border-radius:8px;margin-bottom:10px;border:1px solid var(--border)}
+.rule-text{flex:1}
+.rule-txt{font-size:36px;line-height:1.4;margin-bottom:4px}
+.rule-meta{font-size:28px;color:var(--text3)}
+.toggle{position:relative;width:46px;height:26px;flex-shrink:0}
+.toggle input{display:none}
+.tog-track{position:absolute;inset:0;background:var(--border2);border-radius:26px;cursor:pointer;transition:.2s}
+.tog-track::before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tog-track{background:var(--green)}
+.toggle input:checked+.tog-track::before{transform:translateX(20px)}
+.rule-input{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:36px;padding:14px;resize:vertical;min-height:96px;font-family:inherit;outline:none;margin-bottom:12px;line-height:1.5}
+.rule-input:focus{border-color:var(--blue)}
+.rule-input::placeholder{color:var(--text3)}
+.rule-hint{color:var(--text3);font-size:30px;margin-bottom:14px;line-height:1.5}
+
+/* BLOCKCHAIN */
+.chain-entry{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:10px;display:flex;gap:20px}
+.chain-ts{color:var(--text3);font-size:28px;font-family:monospace;min-width:170px;padding-top:2px}
+.chain-body{flex:1}
+.chain-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.chain-evt{font-size:38px;font-weight:700}
+.chain-tag{display:inline-block;padding:3px 10px;border-radius:4px;font-size:26px;font-weight:700}
+.tag-alert{background:var(--red-bg);color:var(--red)}
+.tag-rule{background:var(--blue-bg);color:var(--blue)}
+.tag-snap{background:var(--green-bg);color:var(--green)}
+.tag-analysis{background:var(--purple-bg);color:var(--purple)}
+.chain-sum{color:var(--text2);font-size:34px;line-height:1.5;margin-bottom:8px}
+.chain-hash{color:var(--purple);font-family:monospace;font-size:28px}
+
+/* REPORTS */
+.report-types{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.rtype{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .15s}
+.rtype:hover{border-color:var(--blue);background:var(--blue-bg)}
+.rtype.sel{border-color:var(--blue);background:rgba(88,166,255,.1)}
+.rtype-icon{font-size:60px;margin-bottom:10px}
+.rtype-title{font-size:36px;font-weight:700;margin-bottom:6px}
+.rtype-desc{color:var(--text2);font-size:30px;line-height:1.4}
+.report-out{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:26px;min-height:300px}
+.report-out h3{font-size:52px;font-weight:800;margin-bottom:6px}
+.report-subtitle{color:var(--text2);font-size:32px;margin-bottom:22px;display:flex;align-items:center;gap:10px}
+.report-sec{padding:18px 0;border-bottom:1px solid var(--border)}
+.report-sec:last-child{border-bottom:none}
+.report-sec h4{font-size:32px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.report-sec p{font-size:36px;line-height:1.6;color:var(--text)}
+.report-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:240px;color:var(--text3);font-size:36px;gap:14px}
+
+/* PORTFOLIO */
+.port-grid{display:grid;gap:14px}
+.port-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px}
+.port-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.port-name{font-size:40px;font-weight:700}
+.port-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:36px}
+.port-row:last-child{border-bottom:none}
+.port-lbl{color:var(--text2)}
+.port-val{font-weight:600}
+
+/* BANNER */
+.demo-banner{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:32px;color:var(--yellow);margin-bottom:20px}
+.verify-banner{background:var(--purple-bg);border:1px solid rgba(188,140,255,.3);border-radius:8px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:30px;color:var(--purple);margin-bottom:14px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* Empty state */
+.empty{text-align:center;padding:60px 20px;color:var(--text3);font-size:36px}
+.empty-icon{font-size:96px;margin-bottom:16px}
+
+/* Notification toast */
+.toast{position:fixed;bottom:30px;right:30px;background:var(--card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:10px;padding:14px 20px;font-size:34px;z-index:999;transform:translateX(150%);transition:transform .3s;max-width:360px}
+.toast.show{transform:translateX(0)}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark">⚡</div>
+    LightWatch
+  </div>
+  <div class="demo-banner" style="margin-bottom:0;padding:6px 14px">
+    🔬 Demo Mode — Simulated Live Data
+  </div>
+  <div class="entity-wrap">
+    <span class="entity-label">Monitoring:</span>
+    <select class="entity-select" id="entitySelect" onchange="switchEntity(this.value)">
+      <option value="mfg">Meridian Manufacturing</option>
+      <option value="restaurant">Golden Leaf Restaurant Group</option>
+      <option value="realestate">Harbor View Properties</option>
+    </select>
+    <div class="overall-pill" id="overallPill">
+      <div class="dot dot-red" id="overallDot"></div>
+      <span id="overallText">2 Active Alerts</span>
+    </div>
+  </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav active" onclick="showSection('dashboard')" id="nav-dashboard">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav" onclick="showSection('alerts')" id="nav-alerts">
+      <span class="nav-icon">🚨</span> Alerts
+      <span class="nav-badge" id="alertBadge">2</span>
+    </div>
+    <div class="nav" onclick="showSection('rules')" id="nav-rules">
+      <span class="nav-icon">📋</span> Rules
+    </div>
+    <div class="nav" onclick="showSection('blockchain')" id="nav-blockchain">
+      <span class="nav-icon">🔗</span> Blockchain Log
+    </div>
+    <div class="nav" onclick="showSection('reports')" id="nav-reports">
+      <span class="nav-icon">📄</span> Reports
+    </div>
+    <div class="nav" onclick="showSection('portfolio')" id="nav-portfolio">
+      <span class="nav-icon">🏢</span> <span id="portfolioNavLabel">Locations</span>
+    </div>
+    <div class="sidebar-footer">
+      <div style="color:var(--text3);font-size:14px;margin-bottom:4px">Powered by</div>
+      <div style="color:var(--text2);font-size:15px;font-weight:600">Lightchain AIVM</div>
+      <div class="chain-indicator">
+        <span class="dot dot-green blink"></span>
+        Mainnet Connected
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div class="section active" id="section-dashboard">
+      <div class="sec-header">
+        <h2 class="sec-title" id="dashTitle">Meridian Manufacturing</h2>
+        <div class="live-badge"><div class="live-dot"></div> Live</div>
+      </div>
+      <div class="stats-row" id="statsRow"></div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <h3>Live Data Stream</h3>
+          <div class="live-badge"><div class="live-dot"></div> Updating</div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Monitor Point</th>
+            <th>Current Value</th>
+            <th>Target</th>
+            <th>Status</th>
+            <th>Last Updated</th>
+          </tr></thead>
+          <tbody id="monitorTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ===== ALERTS ===== -->
+    <div class="section" id="section-alerts">
+      <div class="sec-header">
+        <h2 class="sec-title">Active Alerts</h2>
+        <button class="btn btn-out" onclick="showSection('blockchain')">View Blockchain Log →</button>
+      </div>
+      <div id="alertsContainer"></div>
+    </div>
+
+    <!-- ===== RULES ===== -->
+    <div class="section" id="section-rules">
+      <div class="sec-header">
+        <h2 class="sec-title">Monitoring Rules</h2>
+      </div>
+      <div class="demo-banner">
+        ℹ️ Rules are written in plain English. AIVM reads them at setup and applies them on top of default anomaly detection. Changes are multisig-gated and logged on-chain.
+      </div>
+      <div class="rules-grid">
+        <div class="rules-panel">
+          <h3>Active Rules</h3>
+          <div id="rulesContainer"></div>
+        </div>
+        <div class="rules-panel">
+          <h3>Add a New Rule</h3>
+          <div class="rule-hint">Write your rule in plain English — as if you're telling a team member what to watch for. Be specific about thresholds and timing.</div>
+          <textarea class="rule-input" id="newRuleInput" placeholder='Example: "Alert me if any equipment is idle for more than 20 minutes during shift hours"'></textarea>
+          <button class="btn btn-blue" onclick="addRule()" style="width:100%">Add Rule →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== BLOCKCHAIN LOG ===== -->
+    <div class="section" id="section-blockchain">
+      <div class="sec-header">
+        <h2 class="sec-title">Blockchain Audit Trail</h2>
+        <div class="live-badge"><div class="live-dot"></div> Lightchain Mainnet</div>
+      </div>
+      <div class="verify-banner">
+        🔒 All entries are immutable once written. Timestamps and content are cryptographically verified on Lightchain. Cannot be altered after the fact.
+      </div>
+      <div id="chainContainer"></div>
+    </div>
+
+    <!-- ===== REPORTS ===== -->
+    <div class="section" id="section-reports">
+      <div class="sec-header">
+        <h2 class="sec-title">Generate Report</h2>
+      </div>
+      <div class="demo-banner">
+        📋 Same data — different presentation. Choose who's asking and LightWatch generates the right format.
+      </div>
+      <div class="report-types">
+        <div class="rtype" onclick="selectReport('bank')" id="rtype-bank">
+          <div class="rtype-icon">🏦</div>
+          <div class="rtype-title">Bank / Loan Application</div>
+          <div class="rtype-desc">One-page plain English summary of clean operations and output</div>
+        </div>
+        <div class="rtype" onclick="selectReport('regulator')" id="rtype-regulator">
+          <div class="rtype-icon">🏛️</div>
+          <div class="rtype-title">Regulator / Inspector</div>
+          <div class="rtype-desc">Raw data with timestamps, chain of custody, blockchain verification</div>
+        </div>
+        <div class="rtype" onclick="selectReport('auditor')" id="rtype-auditor">
+          <div class="rtype-icon">📋</div>
+          <div class="rtype-title">Auditor</div>
+          <div class="rtype-desc">What was monitored, flagged, resolved, by whom and when</div>
+        </div>
+        <div class="rtype" onclick="selectReport('exec')" id="rtype-exec">
+          <div class="rtype-icon">👔</div>
+          <div class="rtype-title">Executive Summary</div>
+          <div class="rtype-desc">Plain English — one paragraph, no jargon</div>
+        </div>
+        <div class="rtype" onclick="selectReport('govt')" id="rtype-govt">
+          <div class="rtype-icon">🏗️</div>
+          <div class="rtype-title">Government Contract</div>
+          <div class="rtype-desc">Full compliance documentation package with verified track record</div>
+        </div>
+        <div class="rtype" onclick="selectReport('investor')" id="rtype-investor">
+          <div class="rtype-icon">💼</div>
+          <div class="rtype-title">Investor / Board</div>
+          <div class="rtype-desc">KPI summary with trend analysis and key events</div>
+        </div>
+      </div>
+      <div class="report-out" id="reportOutput">
+        <div class="report-placeholder">
+          <div>📄</div>
+          <div>Select a report type above to generate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PORTFOLIO VIEW ===== -->
+    <div class="section" id="section-portfolio">
+      <div class="sec-header">
+        <h2 class="sec-title" id="portfolioTitle">All Locations</h2>
+        <div class="live-badge"><div class="live-dot"></div> Live</div>
+      </div>
+      <div class="port-grid" id="portGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== DATA =====
+
+const D = {
+  mfg: {
+    name: 'Meridian Manufacturing',
+    industry: 'Manufacturing',
+    portfolio_label: 'Assembly Lines',
+    overall: 'red',
+    monitors: [
+      {id:'la', label:'Assembly Line A — Throughput', val:94, unit:'%', target:'>90%', status:'green', updated:'just now'},
+      {id:'lb', label:'Assembly Line B — Throughput', val:81, unit:'%', target:'>90%', status:'yellow', updated:'12s ago'},
+      {id:'lc', label:'Assembly Line C — Throughput', val:97, unit:'%', target:'>90%', status:'green', updated:'5s ago'},
+      {id:'cs', label:'Cooling System — Temperature', val:94, unit:'°F', target:'<85°F', status:'red', updated:'3s ago'},
+      {id:'sx', label:'Supplier X Parts — In Active Use', val:147, unit:'units', target:'0 units', status:'red', updated:'1m ago'},
+      {id:'en', label:'Energy Consumption — Current Shift', val:2840, unit:'kWh', target:'<3,000', status:'green', updated:'1m ago'},
+    ],
+    stats: {alerts:2, uptime:'99.7%', monitored:6, points:6},
+    alerts: [
+      {id:'a1', sev:'critical', icon:'🔴', title:'Cooling System Over Temperature', what:'Plant floor cooling system has been above 85°F for 23 minutes. Temperature still climbing.', rule:'"Alert if cooling temp stays above 85°F for more than 10 minutes"', baseline:'Normal range: 68–78°F  |  Current: 94°F  |  Trend: rising', notified:'Floor Manager (Rodriguez), Maintenance Team', since:'11:47 AM today', ackd:false, hash:'0x7f3a9b...d82c1'},
+      {id:'a2', sev:'critical', icon:'🔴', title:'Supplier X Parts Flagged — Active Line Use', what:'147 parts from restricted Supplier X detected in active inventory on Line B. Supplier placed on restricted list 2026-05-15 following QC failure.', rule:'"Flag any part that comes from Supplier X with a red status immediately"', baseline:'Supplier X: Restricted since 2026-05-15  |  QC failure rate: 12.4%', notified:'Quality Control Manager (Tanaka), Procurement (Lee)', since:'10:12 AM today', ackd:false, hash:'0x4a21fe...b39d8'},
+    ],
+    rules: [
+      {text:'Alert if cooling temp stays above 85°F for more than 10 minutes', active:true, added:'2026-03-01', context:'Added after HVAC anomaly 2025-11-18'},
+      {text:'Flag any part that comes from Supplier X with a red status immediately', active:true, added:'2026-05-15', context:'Added after QC failure report'},
+      {text:'Warn me if any Assembly Line throughput drops below 85% for 15 minutes', active:true, added:'2026-01-10', context:'Added during quarterly review'},
+    ],
+    chain: [
+      {ts:'2026-06-12 12:10:23', type:'alert', tag:'ALERT', evt:'Anomaly Detected — Cooling System', sum:'Temperature reading 94°F exceeded rule threshold of 85°F. Rule triggered at 12:10:23. Floor Manager Rodriguez and Maintenance Team notified via OrcaMail. Timestamp preserved on-chain.', hash:'0x7f3a9bd4e2ca81f3a7e2d82c1a6f95b7'},
+      {ts:'2026-06-12 10:12:07', type:'alert', tag:'ALERT', evt:'Supplier X Parts Flag Triggered', sum:'AI identified 147 parts from restricted supplier in active Line B inventory. QC Manager Tanaka and Procurement Lee notified. This timestamp proves the moment of detection — cannot be backdated.', hash:'0x4a21fe9c0d78b2e149d3b39d87741abc'},
+      {ts:'2026-06-12 08:00:00', type:'snap', tag:'SNAPSHOT', evt:'Daily Snapshot — Operations Start', sum:'All 3 assembly lines operational at shift start. Lines A/C normal. Line B at 91% throughput. Cooling system normal (76°F). No anomalies at time of snapshot.', hash:'0xb3c8a271f4e92d5c3f0a9f7e341dc827'},
+      {ts:'2026-06-11 17:00:00', type:'snap', tag:'SNAPSHOT', evt:'End-of-Day Snapshot', sum:'2,847 units produced. 99.4% efficiency. Zero safety incidents. Supplier X flag manually cleared by QC Manager Tanaka (multisig approval on file).', hash:'0xa1d9f3cc28b7451e9cd087bc2243fe11'},
+      {ts:'2026-06-11 14:33:15', type:'rule', tag:'RULE CHANGE', evt:'Rule Modification Logged', sum:'User "Tanaka" modified Supplier X rule threshold. Change multisig-gated: Rodriguez (✓) Tanaka (✓) Lee (✓). Rule updated to immediate flag from 5-minute delay.', hash:'0xc74b2145aed3f7901b2cd45a8f6e3b92'},
+    ],
+    portfolio: [
+      {name:'Assembly Line A', cols:[['Status','🟢 Running'],['Throughput','94%'],['Units Today','847'],['Alerts','None']]},
+      {name:'Assembly Line B', cols:[['Status','🟡 Degraded'],['Throughput','81%'],['Units Today','692'],['Alerts','Speed drop alert']]},
+      {name:'Assembly Line C', cols:[['Status','🟢 Running'],['Throughput','97%'],['Units Today','901'],['Alerts','None']]},
+      {name:'Cooling System', cols:[['Status','🔴 Critical'],['Temperature','94°F'],['Normal Range','68–78°F'],['Alerts','Over-temp alert active']]},
+    ],
+    reports: {
+      bank:'Operations running at 94–97% throughput efficiency on 2 of 3 assembly lines. One line experiencing minor speed degradation (under review). Facility produced 2,847 units last full day with zero safety incidents. AIVM monitoring has been active and blockchain-verified since installation.',
+      regulator:'MONITORING PERIOD: 2026-06-11 to 2026-06-12\nPOINTS MONITORED: 6\nANOMALIES FLAGGED: 2\n(1) Cooling System: 94°F, threshold 85°F, duration 23 min, rule active since 2026-03-01. Notified: Rodriguez, Maintenance.\n(2) Supplier X Parts: 147 units in active use, restricted list since 2026-05-15. Notified: Tanaka, Lee.\nAll records timestamped on Lightchain. Verification: lightchain.ai/verify/...',
+      auditor:'MONITORED: 6 data points across 3 assembly lines, cooling system, parts inventory, and energy.\nFLAGGED: 2 events (cooling anomaly + supplier flag)\nNOTIFIED: Floor Manager, Maintenance, QC, Procurement\nRULES IN FORCE: 3 active rules — all changes logged on-chain with multisig approval trail.\nBLOCKCHAIN: All events written to Lightchain mainnet. Hashes available.',
+      exec:'Operations are mostly running clean. Two issues currently active: the cooling system is running hot and needs maintenance attention today, and some parts from a restricted supplier are on Line B — QC has been notified. Everything else is normal.',
+      govt:'COMPLIANCE DOCUMENTATION PACKAGE\nMonitoring Technology: Lightchain AIVM — active continuous monitoring\nAudit Trail: Immutable blockchain record on Lightchain mainnet\nData Retention: All records permanent, cryptographically verified\nAccess Control: 2-of-3 multisig required for configuration changes\nIncident Response: Automated notification with <2 minute response time\nVerification: Any record can be independently verified at lightchain.ai',
+      investor:'Production efficiency: 94% avg across active lines. 2 open issues (cooling + supplier parts — both escalated same day). Uptime: 99.7%. AIVM flagged both incidents faster than manual review would have. Blockchain audit trail active with zero gaps.'
+    }
+  },
+
+  restaurant: {
+    name: 'Golden Leaf Restaurant Group',
+    industry: 'Food & Beverage',
+    portfolio_label: 'Locations',
+    overall: 'yellow',
+    monitors: [
+      {id:'dtc', label:'Downtown — Walk-In Cooler', val:38, unit:'°F', target:'<41°F', status:'green', updated:'8s ago'},
+      {id:'dtb', label:'Downtown — Active Batches', val:12, unit:'batches', target:'0 recalled', status:'green', updated:'2m ago'},
+      {id:'mtc', label:'Midtown — Walk-In Cooler', val:47, unit:'°F', target:'<41°F', status:'yellow', updated:'2s ago'},
+      {id:'mtb', label:'Midtown — Active Batches', val:9, unit:'batches', target:'0 recalled', status:'green', updated:'4m ago'},
+      {id:'utc', label:'Uptown — Walk-In Cooler', val:40, unit:'°F', target:'<41°F', status:'green', updated:'14s ago'},
+      {id:'utb', label:'Uptown — Active Batches', val:15, unit:'batches', target:'0 recalled', status:'green', updated:'3m ago'},
+    ],
+    stats: {alerts:1, uptime:'100%', monitored:6, points:6},
+    alerts: [
+      {id:'r1', sev:'warning', icon:'🟡', title:'Walk-In Cooler Elevated — Midtown', what:'Walk-in cooler at Midtown location has been reading 47°F for 8 minutes. FDA food safety limit is 41°F. Perishables at risk if not addressed.', rule:'"Warn me if any walk-in cooler goes above 41°F for more than 5 minutes"', baseline:'Normal: 36–40°F  |  Current: 47°F  |  Duration: 8 min', notified:'Midtown Manager (Williams), Food Safety Officer (Davis)', since:'12:03 PM today', ackd:false, hash:'0x9c4d11...a7e25'},
+    ],
+    rules: [
+      {text:'Warn me if any walk-in cooler goes above 41°F for more than 5 minutes', active:true, added:'2025-11-01', context:'FDA safety requirement — added during health inspection prep'},
+      {text:'Flag any ingredient batch that matches the current FDA recall list', active:true, added:'2026-02-14', context:'Added after supplier recall incident Feb 2026'},
+    ],
+    chain: [
+      {ts:'2026-06-12 12:03:18', type:'alert', tag:'ALERT', evt:'Cooler Temperature Alert — Midtown', sum:'Walk-in cooler at Midtown location reading 47°F, exceeding 41°F FDA threshold. Midtown Manager Williams and Food Safety Officer Davis notified. Alert timestamp blockchain-verified.', hash:'0x9c4d11f2a87b3149c0e7a7e25702f831'},
+      {ts:'2026-06-12 08:00:00', type:'snap', tag:'SNAPSHOT', evt:'Daily Snapshot — All Locations', sum:'Downtown 🟢 38°F / Midtown 🟢 39°F / Uptown 🟢 40°F. 36 active ingredient batches across 3 locations. 0 FDA recall matches. Normal at time of snapshot.', hash:'0xd7f3a127c9b8421d5e3fc2e8942d0c11'},
+      {ts:'2026-06-10 09:22:44', type:'analysis', tag:'AI ANALYSIS', evt:'Ingredient Batch Cross-Reference', sum:'AI ran batch cross-reference against FDA recall list (updated 2026-06-09). 0 matches found across all 36 active batches at all 3 locations. Timestamp preserved for health inspection.', hash:'0xe1b9c37f2d41a8c9b5e7f474da210e9b'},
+      {ts:'2026-06-01 17:00:00', type:'snap', tag:'SNAPSHOT', evt:'Monthly Snapshot — May 2026', sum:'Zero food safety incidents. 0 cooler alerts. 0 recalled batches. All 3 locations passed daily AIVM checks throughout month. Record sealed.', hash:'0xf4a2c31b87d9e523a6c8b74d1c9f2b44'},
+    ],
+    portfolio: [
+      {name:'Downtown', cols:[['Cooler Temp','🟢 38°F'],['FDA Status','✅ Pass'],['Active Batches','12'],['Open Issues','None']]},
+      {name:'Midtown', cols:[['Cooler Temp','🟡 47°F'],['FDA Status','⚠️ Over Limit'],['Active Batches','9'],['Open Issues','Cooler alert active']]},
+      {name:'Uptown', cols:[['Cooler Temp','🟢 40°F'],['FDA Status','✅ Pass'],['Active Batches','15'],['Open Issues','None']]},
+    ],
+    reports: {
+      bank:'Restaurant group maintained food safety compliance across all 3 locations for the past 6 months. Zero recalled ingredients served. AI monitoring active 24/7 with blockchain-verified daily snapshots. One active cooler alert (Midtown) currently being addressed.',
+      regulator:'FDA COMPLIANCE MONITORING REPORT\nLOCATIONS: 3\nMONITORING POINTS: 6 (temperature + batch tracking per location)\nALERTS LAST 30 DAYS: 1 (cooler temp, Midtown, currently active)\nFDA RECALL MATCHES: 0 (last cross-reference: 2026-06-10)\nAll temperature readings timestamped on Lightchain. Verification link available.',
+      auditor:'MONITORING COVERAGE: All 3 locations, all critical food safety points\nINCIDENTS: 1 active (cooler temp at Midtown)\nRECALL CHECKS: Automated, last run 2026-06-10, 0 matches\nCHAIN RECORDS: Daily snapshots written to blockchain for all locations\nRULES: 2 active rules, both FDA-aligned, last reviewed 2026-02-14',
+      exec:'Two out of three locations are running perfectly. Midtown has a cooler temperature issue right now that the manager has been notified about. No recalled ingredients have been detected at any location.',
+      govt:'FOOD SAFETY COMPLIANCE PACKAGE\nAI Monitoring: Continuous, all critical control points\nBlockchain Verification: Daily tamper-proof snapshots on Lightchain\nFDA Recall Screening: Automated cross-reference, documented\nIncident Response: <3 min notification from detection to manager alert\nAudit Trail: Immutable, independently verifiable',
+      investor:'3 locations, 1 active issue (non-critical cooler). Food safety compliance strong — 0 recalled ingredient incidents in 6 months of monitoring. AIVM flagged the current cooler issue within 5 minutes of threshold breach.'
+    }
+  },
+
+  realestate: {
+    name: 'Harbor View Properties',
+    industry: 'Real Estate',
+    portfolio_label: 'Properties',
+    overall: 'yellow',
+    monitors: [
+      {id:'r1', label:'Harbor View Apt — Rent Status', val:'Paid', unit:'', target:'On Time', status:'green', updated:'Jun 1'},
+      {id:'r2', label:'Sunset Condos — Rent Status', val:'8 Days Late', unit:'', target:'On Time', status:'red', updated:'Jun 9'},
+      {id:'r3', label:'Bay Street Commercial — Rent Status', val:'Paid', unit:'', target:'On Time', status:'green', updated:'Jun 1'},
+      {id:'r4', label:'Marina Lofts — Rent Status', val:'Paid', unit:'', target:'On Time', status:'green', updated:'Jun 1'},
+      {id:'r5', label:'Pier Point Retail — Rent Status', val:'Paid', unit:'', target:'On Time', status:'green', updated:'Jun 1'},
+      {id:'r6', label:'Leases Expiring in 60 Days', val:'1 lease', unit:'', target:'0', status:'yellow', updated:'Today'},
+    ],
+    stats: {alerts:2, uptime:'100%', monitored:5, points:6},
+    alerts: [
+      {id:'p1', sev:'warning', icon:'🟡', title:'Late Rent — Sunset Condos, Unit 4B', what:'June rent not received. 8 days past due date. Tenant history: 14-month tenancy, 1 prior late payment (2025-09).', rule:'"Alert me if any tenant payment is more than 5 days late"', baseline:'Monthly rent: $2,400  |  Due date: June 1  |  Days late: 8  |  Late fee: $120', notified:'Property Manager (Chen)', since:'2026-06-06', ackd:false, hash:'0x3b7f22...c91d4'},
+      {id:'p2', sev:'warning', icon:'🟡', title:'Lease Expiring Soon — Pier Point Retail', what:'Pier Point Retail lease expires 2026-08-30. Within 60-day notification window. Renewal conversation not yet initiated.', rule:'"Notify me when any lease is 60 days from expiration"', baseline:'Current rent: $6,000/mo  |  Tenant: 3-year history  |  Expires: Aug 30, 2026', notified:'Property Manager (Chen)', since:'2026-06-12', ackd:false, hash:'0x7d2a43...f85e19'},
+    ],
+    rules: [
+      {text:'Alert me if any tenant payment is more than 5 days late', active:true, added:'2025-09-01', context:'Replaced 30-day default — catches issues earlier'},
+      {text:'Notify me when any lease is 60 days from expiration', active:true, added:'2025-09-01', context:'Allows time for renewal negotiation'},
+    ],
+    chain: [
+      {ts:'2026-06-12 08:00:00', type:'alert', tag:'ALERT', evt:'Lease Expiration — Pier Point Retail', sum:'Pier Point Retail lease expires 2026-08-30. Entered 60-day notification window. Property Manager Chen notified. Alert timestamp recorded on-chain.', hash:'0x7d2a43c9f1e8274ba5d3f85e19cc2b41'},
+      {ts:'2026-06-09 09:00:00', type:'alert', tag:'ALERT', evt:'Late Rent — Sunset Condos Unit 4B', sum:'8 days since due date. Tenant has 14-month history with 1 prior late payment. $2,400 outstanding. Late fee of $120 applies. Property Manager Chen notified.', hash:'0x3b7f22d9e1ca874ab6c4c91d4a5f2e33'},
+      {ts:'2026-06-01 17:00:00', type:'snap', tag:'SNAPSHOT', evt:'Monthly Rent Snapshot — June 2026', sum:'4 of 5 properties paid by due date. Total collected: $22,200 of $24,200 expected. Sunset Condos ($2,400) outstanding. All payment records immutably recorded.', hash:'0xf7a2c381de49b2c7a84d8b1153de2c91'},
+      {ts:'2026-05-31 17:00:00', type:'snap', tag:'SNAPSHOT', evt:'Monthly Snapshot — May 2026', sum:'5 of 5 properties paid. Total: $24,200. Zero maintenance escalations. Zero late payments. Full records sealed on Lightchain.', hash:'0xb4c7e1a2c98f34d6e7319d3a576bc021'},
+      {ts:'2026-04-12 10:15:00', type:'analysis', tag:'AI ANALYSIS', evt:'Portfolio Cash Flow Analysis', sum:'AI analyzed 9 months of rent collection data. Pattern: Harbor View and Bay Street most reliable. Sunset Condos: 2 late payments in 14 months. Pier Point: 0 late payments. Findings timestamped on-chain.', hash:'0x9e3f12a74bc8d51f2c0e6745a2f8c019'},
+    ],
+    portfolio: [
+      {name:'Harbor View Apt', cols:[['Rent','$3,200'],['June Status','🟢 Paid'],['Open Maintenance','1 ticket'],['Lease Expires','Mar 2027']]},
+      {name:'Sunset Condos', cols:[['Rent','$2,400'],['June Status','🔴 8 Days Late'],['Open Maintenance','0 tickets'],['Lease Expires','Dec 2026']]},
+      {name:'Bay Street Commercial', cols:[['Rent','$8,500'],['June Status','🟢 Paid'],['Open Maintenance','2 tickets'],['Lease Expires','Jun 2027']]},
+      {name:'Marina Lofts', cols:[['Rent','$4,100'],['June Status','🟢 Paid'],['Open Maintenance','0 tickets'],['Lease Expires','Jan 2027']]},
+      {name:'Pier Point Retail', cols:[['Rent','$6,000'],['June Status','🟢 Paid'],['Open Maintenance','0 tickets'],['Lease Expires','⚠️ Aug 30, 2026']]},
+    ],
+    reports: {
+      bank:'Portfolio of 5 properties collecting $24,200/month. May 2026: 100% on-time collection. June 2026: 4 of 5 paid, 1 late (recovery in progress). AIVM monitoring tracks rent, maintenance, and lease status with blockchain-verified monthly snapshots. Suitable for refinancing documentation.',
+      regulator:'PROPERTY MONITORING REPORT\nPROPERTIES: 5\nMONITORING: Rent collection, maintenance, lease status\nCURRENT ALERTS: 2 (1 late rent, 1 lease expiry warning)\nBLOCKCHAIN: Monthly rent snapshots immutably recorded on Lightchain\nCHAIN OF CUSTODY: All payment events timestamped and verifiable',
+      auditor:'RENT COLLECTION — Last 30 days: $22,200 of $24,200 collected (Sunset Condos outstanding)\nMAINTENANCE — 3 open tickets across 5 properties\nLEASE ALERTS — 1 lease within 60 days of expiry\nBLOCKCHAIN RECORDS — Monthly snapshots + all alert events recorded\nRULES IN FORCE — 2 active, both triggered at least once',
+      exec:"Four out of five properties paid this month. One tenant is 8 days late and the property manager is on it. One lease is coming up for renewal in August — that conversation should start soon.",
+      govt:'PROPERTY MANAGEMENT COMPLIANCE PACKAGE\nAI Monitoring: Continuous — rent, maintenance, lease lifecycle\nBlockchain: Monthly tamper-proof snapshots on Lightchain mainnet\nAudit Trail: Full payment history, independently verifiable\nIncident Documentation: All late payments timestamped at moment of detection\nTenant Dispute Defense: Immutable maintenance and inspection records',
+      investor:'5-property portfolio. Monthly gross rent: $24,200. May: 100% collected. June: 91.7% collected (1 tenant late). AIVM provides early warning — 5-day trigger vs industry-standard 30 days. 9 months of blockchain-verified rent history on file.'
+    }
+  }
+};
+
+// ===== STATE =====
+let current = 'mfg';
+let currentSection = 'dashboard';
+let selectedReport = null;
+let acknowledgedAlerts = {};
+
+// ===== RENDER =====
+function renderDashboard() {
+  const e = D[current];
+  document.getElementById('dashTitle').textContent = e.name;
+
+  // Stats
+  const s = e.stats;
+  const alertColor = s.alerts > 0 ? 'var(--red)' : 'var(--green)';
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-lbl">Active Alerts</div>
+      <div class="stat-val" style="color:${alertColor}">${s.alerts}</div>
+      <div class="stat-sub">${s.alerts===0?'All clear':'Requires attention'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Monitored Points</div>
+      <div class="stat-val" style="color:var(--blue)">${s.points}</div>
+      <div class="stat-sub">All data streams active</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">System Uptime</div>
+      <div class="stat-val" style="color:var(--green)">${s.uptime}</div>
+      <div class="stat-sub">LightWatch agent running</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-lbl">Industry</div>
+      <div class="stat-val" style="font-size:24px;margin-top:4px">${e.industry}</div>
+      <div class="stat-sub">AIVM model active</div>
+    </div>
+  `;
+
+  // Monitor table
+  document.getElementById('monitorTable').innerHTML = e.monitors.map(m => {
+    const chip = m.status === 'green' ? 'chip-green' : m.status === 'yellow' ? 'chip-yellow' : 'chip-red';
+    const label = m.status === 'green' ? '🟢 Normal' : m.status === 'yellow' ? '🟡 Watch' : '🔴 Alert';
+    return `<tr>
+      <td>${m.label}</td>
+      <td style="font-weight:700;font-size:20px">${m.val}${m.unit ? ' '+m.unit : ''}</td>
+      <td class="mono">${m.target}</td>
+      <td><span class="chip ${chip}">${label}</span></td>
+      <td style="color:var(--text3)">${m.updated}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderAlerts() {
+  const e = D[current];
+  const activeAlerts = e.alerts.filter(a => !acknowledgedAlerts[a.id]);
+  const ackdAlerts = e.alerts.filter(a => acknowledgedAlerts[a.id]);
+
+  if (e.alerts.length === 0) {
+    document.getElementById('alertsContainer').innerHTML = `<div class="empty"><div class="empty-icon">✅</div>No active alerts — all systems normal</div>`;
+    return;
+  }
+
+  let html = '';
+  activeAlerts.forEach(a => {
+    html += `<div class="alert-card ${a.sev}" id="alertcard-${a.id}">
+      <div class="al-head">
+        <div class="al-icon">${a.icon}</div>
+        <div>
+          <div class="al-title">${a.title}</div>
+          <div style="color:var(--text3);font-size:15px;margin-top:4px">Since ${a.since}</div>
+        </div>
+        <div class="al-time">${a.since}</div>
+      </div>
+      <div class="al-field"><span class="al-lbl">What happened:</span><span class="al-val">${a.what}</span></div>
+      <div class="al-field"><span class="al-lbl">Rule triggered:</span><span class="al-val" style="font-style:italic">${a.rule}</span></div>
+      <div class="al-field"><span class="al-lbl">Baseline:</span><span class="al-val">${a.baseline}</span></div>
+      <div class="al-field"><span class="al-lbl">Notified:</span><span class="al-val">${a.notified}</span></div>
+      <div class="al-footer">
+        <button class="btn btn-ack" onclick="acknowledgeAlert('${a.id}')">✓ Acknowledge</button>
+        <button class="btn btn-out" onclick="showSection('blockchain')">View in Blockchain Log</button>
+        <span class="chain-link" title="View on Lightchain">${a.hash} ↗</span>
+      </div>
+    </div>`;
+  });
+
+  if (ackdAlerts.length > 0) {
+    html += `<div style="color:var(--text3);font-size:16px;margin:16px 0 10px">ACKNOWLEDGED</div>`;
+    ackdAlerts.forEach(a => {
+      html += `<div class="alert-card resolved">
+        <div class="al-head">
+          <div class="al-icon">✅</div>
+          <div><div class="al-title" style="color:var(--text2)">${a.title}</div><div style="color:var(--text3);font-size:15px;margin-top:4px">Acknowledged — ${a.since}</div></div>
+        </div>
+      </div>`;
+    });
+  }
+
+  if (activeAlerts.length === 0 && ackdAlerts.length > 0) {
+    html = `<div class="empty"><div class="empty-icon">✅</div>All alerts acknowledged</div>` + html;
+  }
+
+  document.getElementById('alertsContainer').innerHTML = html;
+}
+
+function renderRules() {
+  const rules = D[current].rules;
+  document.getElementById('rulesContainer').innerHTML = rules.map((r, i) => `
+    <div class="rule-item">
+      <div class="rule-text">
+        <div class="rule-txt">"${r.text}"</div>
+        <div class="rule-meta">Added ${r.added} — ${r.context}</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleRule(${i}, this.checked)">
+        <div class="tog-track"></div>
+      </label>
+    </div>
+  `).join('');
+}
+
+function renderBlockchain() {
+  const entries = D[current].chain;
+  const tagClass = {alert:'tag-alert', rule:'tag-rule', snap:'tag-snap', analysis:'tag-analysis'};
+  document.getElementById('chainContainer').innerHTML = entries.map(c => `
+    <div class="chain-entry">
+      <div class="chain-ts">${c.ts}</div>
+      <div class="chain-body">
+        <div class="chain-top">
+          <div class="chain-evt">${c.evt}</div>
+          <span class="chain-tag ${tagClass[c.type] || 'tag-snap'}">${c.tag}</span>
+        </div>
+        <div class="chain-sum">${c.sum}</div>
+        <div class="chain-hash">🔗 ${c.hash}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderPortfolio() {
+  const e = D[current];
+  document.getElementById('portfolioTitle').textContent = `${e.name} — ${e.portfolio_label}`;
+  document.getElementById('nav-portfolio').querySelector('span:last-child').textContent = e.portfolio_label;
+  document.getElementById('portfolioNavLabel').textContent = e.portfolio_label;
+
+  const cols = e.portfolio.length <= 3 ? 'repeat('+e.portfolio.length+',1fr)' : 'repeat(2,1fr)';
+  document.getElementById('portGrid').style.gridTemplateColumns = cols;
+
+  document.getElementById('portGrid').innerHTML = e.portfolio.map(p => `
+    <div class="port-card">
+      <div class="port-head">
+        <div class="port-name">${p.name}</div>
+      </div>
+      ${p.cols.map(c => `<div class="port-row"><span class="port-lbl">${c[0]}</span><span class="port-val">${c[1]}</span></div>`).join('')}
+    </div>
+  `).join('');
+}
+
+function updateOverallStatus() {
+  const e = D[current];
+  const dot = document.getElementById('overallDot');
+  const text = document.getElementById('overallText');
+  const pill = document.getElementById('overallPill');
+  const count = e.alerts.filter(a => !acknowledgedAlerts[a.id]).length;
+
+  pill.className = 'overall-pill';
+  dot.className = 'dot';
+
+  if (count === 0) {
+    pill.classList.add('pill-green');
+    dot.classList.add('dot-green');
+    text.textContent = 'All Clear';
+  } else if (e.overall === 'red' && count > 0) {
+    pill.classList.add('pill-red');
+    dot.classList.add('dot-red');
+    text.textContent = count + ' Active Alert' + (count>1?'s':'');
+  } else {
+    pill.classList.add('pill-yellow');
+    dot.classList.add('dot-yellow');
+    text.textContent = count + ' Active Alert' + (count>1?'s':'');
+  }
+
+  const badge = document.getElementById('alertBadge');
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ===== INTERACTIONS =====
+function switchEntity(val) {
+  current = val;
+  acknowledgedAlerts = {};
+  selectedReport = null;
+  renderAll();
+  showSection(currentSection);
+  toast('Switched to ' + D[current].name);
+}
+
+function showSection(name) {
+  currentSection = name;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'alerts') renderAlerts();
+  if (name === 'rules') renderRules();
+  if (name === 'blockchain') renderBlockchain();
+  if (name === 'portfolio') renderPortfolio();
+  if (name === 'reports') { selectedReport = null; document.querySelectorAll('.rtype').forEach(r=>r.classList.remove('sel')); document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📄</div><div>Select a report type above to generate</div></div>'; }
+}
+
+function acknowledgeAlert(id) {
+  acknowledgedAlerts[id] = true;
+  renderAlerts();
+  updateOverallStatus();
+  toast('Alert acknowledged and logged');
+  // Add to blockchain
+  D[current].chain.unshift({
+    ts: new Date().toISOString().replace('T',' ').slice(0,19),
+    type: 'rule', tag: 'ACKNOWLEDGED',
+    evt: 'Alert Acknowledged',
+    sum: 'Alert "' + D[current].alerts.find(a=>a.id===id)?.title + '" acknowledged by operator. Acknowledgment timestamp recorded on-chain.',
+    hash: '0x'+Math.random().toString(16).slice(2,10)+'...'+Math.random().toString(16).slice(2,7)
+  });
+}
+
+function toggleRule(i, val) {
+  D[current].rules[i].active = val;
+  toast(val ? 'Rule activated' : 'Rule paused');
+}
+
+function addRule() {
+  const input = document.getElementById('newRuleInput');
+  const text = input.value.trim();
+  if (!text) { toast('Please enter a rule first'); return; }
+  const rule = {
+    text: text,
+    active: true,
+    added: new Date().toISOString().slice(0,10),
+    context: 'Added via dashboard'
+  };
+  D[current].rules.push(rule);
+  D[current].chain.unshift({
+    ts: new Date().toISOString().replace('T',' ').slice(0,19),
+    type: 'rule', tag: 'RULE CHANGE',
+    evt: 'New Rule Added',
+    sum: 'Rule added: "' + text + '". AIVM will apply this rule on next monitoring cycle. Change logged on-chain.',
+    hash: '0x'+Math.random().toString(16).slice(2,10)+'...'+Math.random().toString(16).slice(2,7)
+  });
+  input.value = '';
+  renderRules();
+  toast('Rule added — AIVM will apply on next cycle');
+}
+
+function selectReport(type) {
+  selectedReport = type;
+  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
+  document.getElementById('rtype-' + type).classList.add('sel');
+
+  const names = {bank:'Bank / Loan Application', regulator:'Regulator / Inspector', auditor:'Auditor Report', exec:'Executive Summary', govt:'Government Contract Package', investor:'Investor / Board Report'};
+  const e = D[current];
+  const content = e.reports[type] || 'Report not available for this entity type.';
+  const today = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+
+  // Format multi-line content
+  const lines = content.split('\n');
+  let bodyHtml = '';
+  if (lines.length > 1) {
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      if (line.includes(':') && line === line.toUpperCase()) {
+        bodyHtml += `<div class="report-sec"><h4>${line}</h4></div>`;
+      } else if (line.match(/^\([0-9]+\)/)) {
+        bodyHtml += `<div style="margin-left:16px;margin-bottom:8px;font-size:18px;line-height:1.5;color:var(--text)">${line}</div>`;
+      } else {
+        bodyHtml += `<div class="report-sec"><p>${line}</p></div>`;
+      }
+    });
+  } else {
+    bodyHtml = `<div class="report-sec"><p style="font-size:22px;line-height:1.7">${content}</p></div>`;
+  }
+
+  document.getElementById('reportOutput').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h3 style="font-size:24px;font-weight:800">${names[type]}</h3>
+        <div class="report-subtitle">
+          <span>${e.name}</span>
+          <span style="color:var(--border2)">|</span>
+          <span>Generated ${today}</span>
+          <span style="color:var(--border2)">|</span>
+          <span style="color:var(--purple)">Blockchain verified</span>
+        </div>
+      </div>
+      <button class="btn btn-blue" onclick="toast('Export feature coming — will generate PDF/Excel')">Export ↓</button>
+    </div>
+    ${bodyHtml}
+    <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;color:var(--purple);font-size:15px">
+      🔒 Data sourced from Lightchain mainnet — all figures cryptographically verified and tamper-proof
+    </div>
+  `;
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function renderAll() {
+  renderDashboard();
+  renderAlerts();
+  renderRules();
+  renderBlockchain();
+  renderPortfolio();
+  updateOverallStatus();
+}
+
+// ===== LIVE SIMULATION =====
+function simulate() {
+  const mfg = D.mfg.monitors;
+  // Line A — small fluctuation
+  mfg[0].val = Math.round(Math.min(99, Math.max(88, mfg[0].val + (Math.random()*4-2))));
+  // Line B — oscillating around 81
+  mfg[1].val = Math.round(Math.min(90, Math.max(74, mfg[1].val + (Math.random()*4-2))));
+  mfg[1].status = mfg[1].val < 85 ? 'yellow' : 'green';
+  // Line C
+  mfg[2].val = Math.round(Math.min(100, Math.max(92, mfg[2].val + (Math.random()*3-1))));
+  // Cooling — slowly rising
+  mfg[3].val = Math.round(Math.min(99, Math.max(88, mfg[3].val + (Math.random()*1.5-0.4))) * 10) / 10;
+  // Update timestamps
+  mfg[0].updated = 'just now';
+  mfg[1].updated = 'just now';
+  mfg[2].updated = 'just now';
+  mfg[3].updated = 'just now';
+
+  const rest = D.restaurant.monitors;
+  // Midtown cooler — oscillating above 41
+  rest[2].val = Math.round(Math.min(53, Math.max(43, rest[2].val + (Math.random()*1.5-0.4))) * 10) / 10;
+  rest[2].updated = 'just now';
+  // Downtown cooler — normal fluctuation
+  rest[0].val = Math.round(Math.min(41, Math.max(36, rest[0].val + (Math.random()*1-0.5))) * 10) / 10;
+  rest[0].updated = 'just now';
+
+  if (currentSection === 'dashboard') renderDashboard();
+}
+
+setInterval(simulate, 4000);
+
+// ===== INIT =====
+renderAll();
+</script>
+
+</body>
+</html>
