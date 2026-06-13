@@ -57,6 +57,15 @@ body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSy
 .section{display:none}
 .section.active{display:block}
 
+/* QB CONNECT PANEL */
+.qb-connect{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.qb-badge{font-size:18px;font-weight:700}
+.qb-badge.qb-on{color:var(--green)}
+.qb-badge.qb-off{color:var(--text2)}
+.btn-qb{background:linear-gradient(135deg,#2ca01c,#1a7a13);color:#fff;border:none;border-radius:8px;padding:12px 22px;font-size:18px;font-weight:700;cursor:pointer}
+.btn-qb:hover{opacity:.9}
+.btn-qb.qb-load{background:linear-gradient(135deg,var(--blue),var(--purple))}
+
 /* SECTION HEADER */
 .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .sec-title{font-size:30px;font-weight:800}
@@ -357,6 +366,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="sec-header">
         <h2 class="sec-title">Generate Report</h2>
       </div>
+
+      <!-- QuickBooks Connect Panel -->
+      <div class="qb-connect" id="qb-connect-panel">
+        <div>
+          <div class="qb-badge qb-off" id="qb-status-badge">⚡ QuickBooks — Not Connected</div>
+          <div style="color:var(--text2);font-size:18px;margin-top:6px" id="qb-status-sub">Connect your real QuickBooks account to load live financial data into LightView</div>
+        </div>
+        <button class="btn-qb" id="qb-action-btn" onclick="qbConnect()">🔗 Connect QuickBooks</button>
+      </div>
+
       <div class="demo-banner">
         📋 Same data — different presentation. Choose who's asking and LightView generates the right format.
       </div>
@@ -1049,8 +1068,153 @@ function simulate() {
 
 setInterval(simulate, 4000);
 
+// ===== QUICKBOOKS INTEGRATION =====
+let qbRealm = localStorage.getItem('lv_qb_realm') || null;
+
+function qbConnect() {
+  if (qbRealm) {
+    loadQBReport();
+  } else {
+    window.location.href = BACKEND + '/api/qb/auth';
+  }
+}
+
+function loadQBReport() {
+  document.getElementById('reportOutput').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px">
+      <div style="width:36px;height:36px;border:3px solid var(--border2);border-top-color:#2ca01c;border-radius:50%;animation:spin .8s linear infinite"></div>
+      <div style="color:var(--text2);font-size:18px">Loading your QuickBooks data…</div>
+    </div>
+  `;
+  fetch(BACKEND + '/api/qb/data?realm=' + qbRealm)
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      renderQBReport(data);
+    })
+    .catch(err => {
+      document.getElementById('reportOutput').innerHTML = `
+        <div class="report-placeholder"><div>⚠️</div><div style="color:var(--red)">Could not load QuickBooks data: ${err.message}</div></div>
+      `;
+    });
+}
+
+function renderQBReport(data) {
+  const monitors = data.monitors || [];
+  const alerts = data.alerts || [];
+  const stats = data.stats || {};
+  const overallColor = stats.overall === 'green' ? 'var(--green)' : stats.overall === 'red' ? 'var(--red)' : 'var(--yellow)';
+
+  const monitorRows = monitors.map(m => {
+    const dot = m.status === 'green' ? 'var(--green)' : m.status === 'red' ? 'var(--red)' : 'var(--yellow)';
+    return `<tr>
+      <td style="padding:14px 16px;font-size:18px">${m.name}</td>
+      <td style="padding:14px 16px;font-size:18px;font-weight:700">${m.value}</td>
+      <td style="padding:14px 16px"><span style="display:inline-flex;align-items:center;gap:6px;font-size:18px"><span style="width:10px;height:10px;border-radius:50%;background:${dot};display:inline-block"></span>${m.status.charAt(0).toUpperCase()+m.status.slice(1)}</span></td>
+      <td style="padding:14px 16px;color:var(--text2);font-size:18px">${m.threshold}</td>
+    </tr>`;
+  }).join('');
+
+  const alertHtml = alerts.length === 0
+    ? '<div style="color:var(--green);font-size:18px;padding:16px 0">✅ No active alerts — all financial metrics within thresholds</div>'
+    : alerts.map(a => {
+        const isC = a.severity === 'critical';
+        return `<div style="background:${isC?'rgba(248,81,73,.1)':'rgba(210,153,34,.1)'};border:1px solid ${isC?'rgba(248,81,73,.3)':'rgba(210,153,34,.3)'};border-radius:8px;padding:14px 18px;margin-bottom:10px">
+          <div style="font-weight:700;font-size:18px;color:${isC?'var(--red)':'var(--yellow)'}">${isC?'🚨':'⚠️'} ${a.title}</div>
+          <div style="color:var(--text2);font-size:18px;margin-top:4px">Value: ${a.triggered_value} | Threshold: ${a.threshold}</div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('reportOutput').innerHTML = `
+    <div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <h3 style="font-size:26px;font-weight:800;margin-bottom:6px">${data.company_name}</h3>
+          <div style="color:var(--text2);font-size:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <span style="color:var(--green);font-weight:700">✅ QuickBooks Live Data</span>
+            <span style="color:var(--border2)">|</span>
+            <span>As of ${data.as_of}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center;min-width:80px">
+            <div style="font-size:22px;font-weight:800;color:${overallColor}">●</div>
+            <div style="font-size:18px;color:var(--text2)">Overall</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center;min-width:80px">
+            <div style="font-size:22px;font-weight:800">${stats.profit_margin||'N/A'}</div>
+            <div style="font-size:18px;color:var(--text2)">Margin</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 18px;text-align:center;min-width:80px">
+            <div style="font-size:22px;font-weight:800">${alerts.length}</div>
+            <div style="font-size:18px;color:var(--text2)">Alerts</div>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <div class="table-head"><h3>Financial Monitors</h3></div>
+        <table>
+          <tr style="background:rgba(255,255,255,.03)">
+            <th style="padding:12px 16px;text-align:left;font-size:18px;color:var(--text2);font-weight:600">Metric</th>
+            <th style="padding:12px 16px;text-align:left;font-size:18px;color:var(--text2);font-weight:600">Value</th>
+            <th style="padding:12px 16px;text-align:left;font-size:18px;color:var(--text2);font-weight:600">Status</th>
+            <th style="padding:12px 16px;text-align:left;font-size:18px;color:var(--text2);font-weight:600">Threshold</th>
+          </tr>
+          ${monitorRows}
+        </table>
+      </div>
+      <div style="margin-bottom:16px">
+        <h3 style="font-size:20px;font-weight:700;margin-bottom:12px">Financial Alerts</h3>
+        ${alertHtml}
+      </div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;color:var(--purple);font-size:18px">
+        🔒 Data sourced live from QuickBooks — key financial events can be logged on Lightchain for immutable audit trail
+      </div>
+    </div>
+  `;
+  toast('✅ QuickBooks data loaded');
+}
+
+function initQB() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('qb_connected') === '1' && params.get('realm')) {
+    qbRealm = params.get('realm');
+    localStorage.setItem('lv_qb_realm', qbRealm);
+    history.replaceState({}, '', window.location.pathname);
+    toast('✅ QuickBooks connected!');
+  }
+  updateQBPanel();
+}
+
+function updateQBPanel() {
+  const badge = document.getElementById('qb-status-badge');
+  const sub   = document.getElementById('qb-status-sub');
+  const btn   = document.getElementById('qb-action-btn');
+  if (!badge) return;
+
+  if (qbRealm) {
+    fetch(BACKEND + '/api/qb/status?realm=' + qbRealm)
+      .then(r => r.json())
+      .then(data => {
+        if (data.connected) {
+          badge.textContent = '✅ QuickBooks Connected';
+          badge.className = 'qb-badge qb-on';
+          sub.textContent = 'Live financial data ready — click to load your real numbers';
+          btn.textContent = '📊 Load My QB Data';
+          btn.className = 'btn-qb qb-load';
+        } else {
+          qbRealm = null;
+          localStorage.removeItem('lv_qb_realm');
+          updateQBPanel();
+        }
+      })
+      .catch(() => {});
+  }
+}
+
 // ===== INIT =====
 renderAll();
+initQB();
 </script>
 
 </body>
