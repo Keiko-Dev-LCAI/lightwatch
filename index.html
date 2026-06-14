@@ -270,6 +270,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .gb-sheet-tools h3{font-size:20px;font-weight:700;color:var(--text1);margin-bottom:8px}
 .gb-sheet-tools p{font-size:18px;color:var(--text2);margin-bottom:12px;line-height:1.5}
 .gb-sheet-analysis{margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-size:18px;color:var(--text1);line-height:1.7;white-space:pre-wrap;display:none}
+.gb-nav-tab{background:var(--card);border:1px solid var(--border);color:var(--text2);padding:8px 18px;border-radius:8px 8px 0 0;font-size:18px;cursor:pointer;transition:all .15s;font-weight:500}
+.gb-nav-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+.gb-nav-tab:hover:not(.active){color:var(--text);border-color:var(--border2)}
+.gb-inv-filter{background:var(--card);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:20px;font-size:18px;cursor:pointer;transition:all .2s}
+.gb-inv-filter.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
 /* MOBILE RESPONSIVE */
 .hamburger{display:none;background:none;border:none;color:var(--text);font-size:28px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
@@ -929,6 +934,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
       </div>
 
+      <!-- GB Sub-Navigation Tabs -->
+      <div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px">
+        <button class="gb-nav-tab active" onclick="gbShowTab('orders')" id="gbTab-orders">📋 Orders</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory">📦 Inventory</button>
+      </div>
+
+      <!-- Orders sub-section -->
+      <div id="gbSection-orders">
+
       <!-- AIVM Attention Panel -->
       <div class="aivm-bar" id="gb-attention-bar" style="margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
@@ -965,8 +979,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
         <!-- Step 2: Preview table for imported orders -->
         <div id="gbImportPreview" style="display:none;margin-top:14px">
-          <div style="font-size:19px;font-weight:600;color:var(--text1);margin-bottom:8px" id="gbPreviewTitle"></div>
-          <div style="overflow-x:auto">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">
+            <div style="font-size:19px;font-weight:600;color:var(--text1)" id="gbPreviewTitle"></div>
+            <a onclick="gbResetImport()" style="cursor:pointer;color:var(--text2);font-size:17px;text-decoration:underline">↩ Start Over</a>
+          </div>
+          <button class="btn" id="gbSaveImportBtnTop" onclick="saveImportedOrders()" style="font-size:18px;padding:10px 22px;background:var(--green);margin-bottom:10px">✅ Add All Orders to LightView</button>
+          <div style="max-height:380px;overflow-y:auto;border:1px solid var(--border);border-radius:8px">
             <table id="gbPreviewTable" style="width:100%;border-collapse:collapse;font-size:17px"></table>
           </div>
           <div style="margin-top:12px;display:flex;gap:12px">
@@ -1033,6 +1051,53 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <tbody id="gbOrderTableBody"></tbody>
           </table>
         </div>
+      </div>
+
+      </div><!-- end #gbSection-orders -->
+
+      <!-- ── INVENTORY SUB-SECTION ─────────────────────────────── -->
+      <div id="gbSection-inventory" class="gb-tab-section" style="display:none;margin-top:4px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+          <h3 style="margin:0;font-size:22px;color:var(--text)">📦 Inventory</h3>
+          <input id="gbInvSearch" type="text" placeholder="Search items…" oninput="gbFilterInventory()"
+            style="flex:1;min-width:180px;max-width:300px;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:8px 14px;border-radius:8px;font-size:18px">
+          <button onclick="gbOpenAddInventory()"
+            style="background:var(--green);color:#000;border:none;border-radius:8px;padding:10px 18px;font-size:18px;cursor:pointer;font-weight:700">
+            + Add Item
+          </button>
+        </div>
+        <!-- Status filter pills -->
+        <div id="gbInvFilters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <button class="gb-inv-filter active" data-status="" onclick="gbInvSetFilter(this,'')">All</button>
+          <button class="gb-inv-filter" data-status="Available" onclick="gbInvSetFilter(this,'Available')">🟢 Available</button>
+          <button class="gb-inv-filter" data-status="On Order" onclick="gbInvSetFilter(this,'On Order')">🟡 On Order</button>
+          <button class="gb-inv-filter" data-status="Out for Delivery" onclick="gbInvSetFilter(this,'Out for Delivery')">🚚 Out for Delivery</button>
+          <button class="gb-inv-filter" data-status="Sold" onclick="gbInvSetFilter(this,'Sold')">✅ Sold</button>
+        </div>
+        <!-- Inventory table -->
+        <div style="overflow-x:auto;border-radius:10px;border:1px solid var(--border)">
+          <table id="gbInvTable" style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:rgba(255,255,255,.03)">
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2);white-space:nowrap">SKU</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2)">Description</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2)">Manufacturer</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2)">Finish/Fabric</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2);white-space:nowrap">Location</th>
+                <th style="padding:10px 12px;text-align:right;font-size:16px;color:var(--text2)">Cost</th>
+                <th style="padding:10px 12px;text-align:right;font-size:16px;color:var(--text2)">Retail</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2)">Status</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2);white-space:nowrap">Date In</th>
+                <th style="padding:10px 12px;text-align:left;font-size:16px;color:var(--text2);white-space:nowrap">Date Out</th>
+                <th style="padding:10px 12px;text-align:center;font-size:16px;color:var(--text2)">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="gbInvBody">
+              <tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text2);font-size:18px">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="gbInvCount" style="margin-top:10px;font-size:18px;color:var(--text2)"></div>
       </div>
     </div>
 
@@ -1201,6 +1266,72 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div style="margin-top:20px;display:flex;gap:12px">
       <button onclick="saveNewOrder()" style="flex:1;background:var(--accent);color:#fff;border:none;padding:14px;border-radius:6px;font-size:20px;font-weight:700;cursor:pointer">Save Order</button>
       <button onclick="closeModal()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:14px 22px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVENTORY ADD/EDIT MODAL -->
+<div id="gbInvModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;width:min(560px,95vw);max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 id="gbInvModalTitle" style="margin:0;font-size:22px;color:var(--text);font-weight:700">Add Inventory Item</h3>
+      <button onclick="gbCloseInvModal()" style="background:none;border:none;color:var(--text2);font-size:24px;cursor:pointer">✕</button>
+    </div>
+    <input type="hidden" id="gbInvId">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="grid-column:1/-1">
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Description *</label>
+        <input id="gbInvDesc" type="text" placeholder="Sofa, Dining Table, etc." style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">SKU / Part #</label>
+        <input id="gbInvSku" type="text" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Manufacturer</label>
+        <input id="gbInvMfr" type="text" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Finish / Fabric</label>
+        <input id="gbInvFinish" type="text" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Warehouse Location</label>
+        <input id="gbInvLoc" type="text" placeholder="Row A, Shelf 3…" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Status</label>
+        <select id="gbInvStatus" style="width:100%;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+          <option>Available</option>
+          <option>On Order</option>
+          <option>Out for Delivery</option>
+          <option>Sold</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Cost Price</label>
+        <input id="gbInvCost" type="number" step="0.01" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Retail Price</label>
+        <input id="gbInvRetail" type="number" step="0.01" placeholder="0.00" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Date In (Arrived)</label>
+        <input id="gbInvDateIn" type="date" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div>
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Date Out (Delivered)</label>
+        <input id="gbInvDateOut" type="date" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px">
+      </div>
+      <div style="grid-column:1/-1">
+        <label style="font-size:18px;color:var(--text2);display:block;margin-bottom:4px">Notes</label>
+        <textarea id="gbInvNotes" rows="2" style="width:100%;box-sizing:border-box;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:20px;justify-content:flex-end">
+      <button onclick="gbCloseInvModal()" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:8px;font-size:18px;cursor:pointer">Cancel</button>
+      <button onclick="gbSaveInventoryItem()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:10px 24px;font-size:18px;font-weight:700;cursor:pointer">Save Item</button>
     </div>
   </div>
 </div>
@@ -2349,29 +2480,39 @@ function handleFileSelect(input) {
 
 // ── Column mapping field labels shown in dropdowns ──────────────────────────
 const GB_FIELD_LABELS = {
-  '':                '— Skip this column —',
-  'customer_name':   'Customer Name',
-  'phone':           'Phone Number',
-  'items':           'Item / Description',
-  'manufacturer':    'Manufacturer / Brand',
-  'total_amount':    'Total Price ($)',
-  'deposit_paid':    'Deposit Paid ($)',
-  'expected_date':   'Expected Date',
-  'status':          'Status / Stage',
-  'notes':           'Notes / Comments',
+  '':                   '— Skip this column —',
+  'customer_name':      'Customer Name (TAG)',
+  'phone':              'Phone Number',
+  'items':              'Item / Description',
+  'manufacturer':       'Manufacturer / Brand',
+  'total_amount':       'Total Price ($)',
+  'deposit_paid':       'Deposit Paid ($)',
+  'expected_date':      'Expected Date',
+  'status':             'Status / Stage',
+  'notes':              'Notes / Comments',
+  'warehouse_location': 'Warehouse Location',
+  'sku':                'SKU / Part #',
+  'finish_fabric':      'Finish / Fabric',
+  'cost_price':         'Cost Price',
+  'date_in':            'Date In (Arrived)',
 };
 
 // Keywords that auto-select each field
 const GB_AUTO_MAP = {
-  customer_name: ['customer','customer name','name','client','buyer','bill to','sold to','tagged','tag','tagged as','customer tag','warehouse tag'],
-  phone:         ['phone','telephone','cell','mobile','contact','phone number'],
-  items:         ['items','item','description','product','furniture','order','goods','merchandise','desc','part description','partnumber','part number','part #','part#','sku','model','finish','finish/fabric','fabric'],
-  manufacturer:  ['manufacturer','vendor','supplier','brand','maker','mfg','source'],
-  total_amount:  ['total','total amount','price','amount','sale','invoice','cost','balance','unit cost','retail','retail price'],
-  deposit_paid:  ['deposit','deposit paid','paid','down payment','down','payment'],
-  expected_date: ['expected','expected date','eta','due date','delivery date','arrival','ship date','date out','out date','date sold','ship','delivery'],
-  status:        ['status','order status','stage','state','location','loc'],
-  notes:         ['notes','note','comments','comment','remarks','memo','details','po#','po #','purchase order','po number','verified','intl','initials','approved by'],
+  customer_name:      ['customer','customer name','name','client','buyer','bill to','sold to','tagged','tag','tagged as','customer tag','warehouse tag'],
+  phone:              ['phone','telephone','cell','mobile','contact','phone number'],
+  manufacturer:       ['manufacturer','vendor','supplier','brand','maker','mfg','source'],
+  warehouse_location: ['location','loc','warehouse','warehouse location','warehouse loc','wh location','bin','shelf','whloc'],
+  sku:                ['sku','part#','part number','part #','part no','item#','item number','style#','style number','partnumber'],
+  finish_fabric:      ['finish','fabric','finish/fabric','color','colour','material'],
+  cost_price:         ['cost','cost price','unit cost','our cost','dealer cost','net','net price'],
+  date_in:            ['date in','date arrived','arrived','received','receipt date','in date','date received'],
+  items:              ['items','item','description','product','furniture','order','goods','merchandise','desc','part description','model'],
+  total_amount:       ['total','total amount','price','amount','sale','invoice','balance','retail','retail price'],
+  deposit_paid:       ['deposit','deposit paid','paid','down payment','down','payment'],
+  expected_date:      ['expected','expected date','eta','due date','delivery date','arrival','ship date','date out','out date','date sold','ship','delivery'],
+  status:             ['status','order status','stage','state'],
+  notes:              ['notes','note','comments','comment','remarks','memo','details','po#','po #','purchase order','po number','verified','intl','initials','approved by'],
 };
 
 function _gbGuessField(header) {
@@ -2494,11 +2635,16 @@ function importSpreadsheetStep2() {
         statusEl.textContent = '❌ ' + data.error; return;
       }
       _gbPendingImport = data.orders || [];
-      statusEl.textContent = `✅ Found ${_gbPendingImport.length.toLocaleString()} orders in ${(data.rows_scanned||0).toLocaleString()} rows`;
+      const _invAdded = data.inventory_added || 0;
+      let _statusMsg = `✅ Found ${_gbPendingImport.length.toLocaleString()} orders`;
+      if (_invAdded > 0) _statusMsg += ` + ${_invAdded.toLocaleString()} inventory items`;
+      _statusMsg += ` in ${(data.rows_scanned||0).toLocaleString()} rows`;
+      statusEl.textContent = _statusMsg;
       document.getElementById('gbColMapPanel').style.display = 'none';
 
       // Preview table (show first 50 rows + "… and X more")
-      document.getElementById('gbPreviewTitle').textContent = `Preview — ${_gbPendingImport.length.toLocaleString()} orders found`;
+      const _invNote = _invAdded > 0 ? ` + ${_invAdded.toLocaleString()} inventory items saved` : '';
+      document.getElementById('gbPreviewTitle').textContent = `Preview — ${_gbPendingImport.length.toLocaleString()} orders found${_invNote}`;
       const tbl  = document.getElementById('gbPreviewTable');
       const cols = ['customer_name','items','manufacturer','total_amount','deposit_paid','expected_date','status'];
       const hdrs = ['Customer','Items','Manufacturer','Total','Deposit','Expected','Status'];
@@ -2512,7 +2658,10 @@ function importSpreadsheetStep2() {
         tbl.innerHTML += `<tr><td colspan="7" style="padding:10px 12px;font-size:16px;color:var(--text2);text-align:center">… and ${(_gbPendingImport.length - 50).toLocaleString()} more orders</td></tr>`;
       }
       const saveBtn = document.getElementById('gbSaveImportBtn');
-      saveBtn.textContent = `✅ Add All ${_gbPendingImport.length.toLocaleString()} Orders to LightView`;
+      const saveBtnLabel = `✅ Add All ${_gbPendingImport.length.toLocaleString()} Orders to LightView`;
+      saveBtn.textContent = saveBtnLabel;
+      const saveBtnTop = document.getElementById('gbSaveImportBtnTop');
+      if (saveBtnTop) saveBtnTop.textContent = saveBtnLabel;
       document.getElementById('gbImportPreview').style.display = '';
     })
     .catch(err => { statusEl.textContent = '❌ Import failed: ' + err.message; });
@@ -4137,6 +4286,163 @@ async function _startOnboarding() {
   document.getElementById('onboardSpinner').style.display = 'none';
   document.getElementById('onboardInput').disabled = false;
   document.getElementById('onboardInput').focus();
+}
+
+// ── GB Sub-tab navigation ─────────────────────────────────────────────────────
+function gbShowTab(tab) {
+  ['orders','inventory'].forEach(t => {
+    const sec = document.getElementById('gbSection-' + t);
+    const btn = document.getElementById('gbTab-' + t);
+    if (sec) sec.style.display = (t === tab) ? '' : 'none';
+    if (btn) {
+      btn.classList.toggle('active', t === tab);
+    }
+  });
+  if (tab === 'inventory') gbLoadInventory();
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────────────
+let _gbInventory = [];
+let _gbInvFilter = '';
+let _gbEditingInvId = null;
+
+async function gbLoadInventory() {
+  try {
+    const res = await fetch(BACKEND + '/api/gb/inventory');
+    _gbInventory = await res.json();
+    gbRenderInventory();
+  } catch(e) {
+    document.getElementById('gbInvBody').innerHTML =
+      `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--red)">Could not load inventory: ${e.message}</td></tr>`;
+  }
+}
+
+function gbRenderInventory() {
+  const q = (document.getElementById('gbInvSearch')?.value || '').toLowerCase();
+  let items = _gbInventory;
+  if (_gbInvFilter) items = items.filter(i => i.status === _gbInvFilter);
+  if (q) items = items.filter(i =>
+    (i.description||'').toLowerCase().includes(q) ||
+    (i.manufacturer||'').toLowerCase().includes(q) ||
+    (i.sku||'').toLowerCase().includes(q) ||
+    (i.warehouse_location||'').toLowerCase().includes(q)
+  );
+
+  const fmt = v => v ? `$${parseFloat(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—';
+  const statusColor = {'Available':'#22c55e','On Order':'#f59e0b','Out for Delivery':'#3b82f6','Sold':'#6b7280'};
+
+  if (!items.length) {
+    document.getElementById('gbInvBody').innerHTML =
+      `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text2);font-size:18px">No inventory items found</td></tr>`;
+    document.getElementById('gbInvCount').textContent = '';
+    return;
+  }
+
+  document.getElementById('gbInvBody').innerHTML = items.map(i => `
+    <tr style="border-top:1px solid var(--border);transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,.03)'" onmouseout="this.style.background=''">
+      <td style="padding:10px 12px;font-size:16px;color:var(--text2)">${i.sku||'—'}</td>
+      <td style="padding:10px 12px;font-size:18px;color:var(--text);font-weight:500;max-width:200px;word-break:break-word">${i.description||'—'}</td>
+      <td style="padding:10px 12px;font-size:17px;color:var(--text)">${i.manufacturer||'—'}</td>
+      <td style="padding:10px 12px;font-size:16px;color:var(--text2)">${i.finish_fabric||'—'}</td>
+      <td style="padding:10px 12px;font-size:16px;color:var(--blue);font-weight:500">${i.warehouse_location||'—'}</td>
+      <td style="padding:10px 12px;font-size:16px;color:var(--text2);text-align:right">${fmt(i.cost_price)}</td>
+      <td style="padding:10px 12px;font-size:17px;color:var(--text);text-align:right;font-weight:500">${fmt(i.retail_price)}</td>
+      <td style="padding:10px 12px;font-size:15px;white-space:nowrap">
+        <span style="background:${statusColor[i.status]||'#6b7280'}22;color:${statusColor[i.status]||'#6b7280'};padding:3px 10px;border-radius:12px;font-weight:600">${i.status||'—'}</span>
+      </td>
+      <td style="padding:10px 12px;font-size:15px;color:var(--text2);white-space:nowrap">${i.date_in||'—'}</td>
+      <td style="padding:10px 12px;font-size:15px;color:var(--text2);white-space:nowrap">${i.date_out||'—'}</td>
+      <td style="padding:10px 12px;text-align:center;white-space:nowrap">
+        <button onclick="gbOpenEditInventory(${i.id})" title="Edit"
+          style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:6px;font-size:15px;cursor:pointer;margin-right:4px">✏️</button>
+        <button onclick="gbDeleteInventoryItem(${i.id},'${(i.description||'').replace(/'/g,"\\'")}')" title="Delete"
+          style="background:transparent;border:1px solid var(--border2);color:var(--red);padding:5px 10px;border-radius:6px;font-size:15px;cursor:pointer">🗑️</button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('gbInvCount').textContent =
+    `${items.length.toLocaleString()} item${items.length!==1?'s':''} shown` +
+    (_gbInventory.length !== items.length ? ` of ${_gbInventory.length.toLocaleString()} total` : '');
+}
+
+function gbFilterInventory() { gbRenderInventory(); }
+
+function gbInvSetFilter(btn, status) {
+  _gbInvFilter = status;
+  document.querySelectorAll('.gb-inv-filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  gbRenderInventory();
+}
+
+function gbOpenAddInventory() {
+  _gbEditingInvId = null;
+  document.getElementById('gbInvModalTitle').textContent = 'Add Inventory Item';
+  ['gbInvId','gbInvDesc','gbInvSku','gbInvMfr','gbInvFinish','gbInvLoc','gbInvCost','gbInvRetail','gbInvDateIn','gbInvDateOut','gbInvNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('gbInvStatus').value = 'Available';
+  document.getElementById('gbInvModal').style.display = 'flex';
+}
+
+function gbOpenEditInventory(id) {
+  const item = _gbInventory.find(i => i.id === id);
+  if (!item) return;
+  _gbEditingInvId = id;
+  document.getElementById('gbInvModalTitle').textContent = 'Edit Inventory Item';
+  document.getElementById('gbInvId').value = id;
+  document.getElementById('gbInvDesc').value = item.description || '';
+  document.getElementById('gbInvSku').value = item.sku || '';
+  document.getElementById('gbInvMfr').value = item.manufacturer || '';
+  document.getElementById('gbInvFinish').value = item.finish_fabric || '';
+  document.getElementById('gbInvLoc').value = item.warehouse_location || '';
+  document.getElementById('gbInvStatus').value = item.status || 'Available';
+  document.getElementById('gbInvCost').value = item.cost_price || '';
+  document.getElementById('gbInvRetail').value = item.retail_price || '';
+  document.getElementById('gbInvDateIn').value = item.date_in || '';
+  document.getElementById('gbInvDateOut').value = item.date_out || '';
+  document.getElementById('gbInvNotes').value = item.notes || '';
+  document.getElementById('gbInvModal').style.display = 'flex';
+}
+
+function gbCloseInvModal() {
+  document.getElementById('gbInvModal').style.display = 'none';
+}
+
+async function gbSaveInventoryItem() {
+  const desc = document.getElementById('gbInvDesc').value.trim();
+  if (!desc) { toast('Please enter a description for the item.'); return; }
+  const payload = {
+    description:       desc,
+    sku:               document.getElementById('gbInvSku').value.trim(),
+    manufacturer:      document.getElementById('gbInvMfr').value.trim(),
+    finish_fabric:     document.getElementById('gbInvFinish').value.trim(),
+    warehouse_location: document.getElementById('gbInvLoc').value.trim(),
+    status:            document.getElementById('gbInvStatus').value,
+    cost_price:        parseFloat(document.getElementById('gbInvCost').value) || null,
+    retail_price:      parseFloat(document.getElementById('gbInvRetail').value) || null,
+    date_in:           document.getElementById('gbInvDateIn').value,
+    date_out:          document.getElementById('gbInvDateOut').value,
+    notes:             document.getElementById('gbInvNotes').value.trim(),
+    user_name:         _getCurrentUser(),
+  };
+  const url    = _gbEditingInvId ? BACKEND + '/api/gb/inventory/' + _gbEditingInvId : BACKEND + '/api/gb/inventory';
+  const method = _gbEditingInvId ? 'PUT' : 'POST';
+  try {
+    await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    gbCloseInvModal();
+    toast(_gbEditingInvId ? '✅ Item updated' : '✅ Item added to inventory');
+    await gbLoadInventory();
+  } catch(e) { toast('Error saving item: ' + e.message); }
+}
+
+async function gbDeleteInventoryItem(id, desc) {
+  if (!confirm(`Delete "${desc}" from inventory? This cannot be undone.`)) return;
+  try {
+    await fetch(BACKEND + `/api/gb/inventory/${id}?user_name=${encodeURIComponent(_getCurrentUser())}`, {method:'DELETE'});
+    toast('🗑️ Item removed from inventory');
+    await gbLoadInventory();
+  } catch(e) { toast('Error: ' + e.message); }
 }
 
 async function sendOnboardMsg() {
