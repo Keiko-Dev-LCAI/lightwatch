@@ -185,8 +185,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
 /* HOW IT WORKS PAGE */
 .hiw-wrap{max-width:860px;margin:0 auto}
 .hiw-hero{background:linear-gradient(135deg,rgba(88,166,255,.08),rgba(188,140,255,.08));border:1px solid rgba(88,166,255,.2);border-radius:16px;padding:28px 32px;margin-bottom:28px;text-align:center}
-.hiw-hero-title{font-size:30px;font-weight:800;margin-bottom:8px;color:var(--blue)}
-.hiw-hero-sub{font-size:18px;color:var(--text2);line-height:1.6;max-width:600px;margin:0 auto}
+.hiw-hero-title{font-size:32px;font-weight:800;margin-bottom:10px;color:var(--blue)}
+.hiw-hero-sub{font-size:19px;color:var(--text2);line-height:1.7;max-width:660px;margin:0 auto}
 .hiw-analogy{background:var(--yellow-bg);border:1px solid rgba(210,153,34,.3);border-radius:12px;padding:22px 26px;margin-bottom:28px;display:flex;gap:18px;align-items:flex-start}
 .hiw-analogy-icon{font-size:36px;flex-shrink:0}
 .hiw-analogy-text{font-size:18px;line-height:1.7;color:var(--text)}
@@ -197,7 +197,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .layer-1 .hiw-layer-num{background:rgba(63,185,80,.15);color:var(--green)}
 .layer-2 .hiw-layer-num{background:var(--blue-bg);color:var(--blue)}
 .layer-3 .hiw-layer-num{background:var(--purple-bg);color:var(--purple)}
-.hiw-layer-body h3{font-size:18px;font-weight:800;margin-bottom:6px}
+.hiw-layer-body h3{font-size:19px;font-weight:800;margin-bottom:6px}
 .hiw-layer-body p{font-size:18px;color:var(--text2);line-height:1.6}
 .hiw-layer-body .hiw-tag{display:inline-block;font-size:18px;font-weight:700;padding:2px 10px;border-radius:20px;margin-bottom:8px}
 .layer-1 .hiw-tag{background:rgba(63,185,80,.15);color:var(--green)}
@@ -208,8 +208,29 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .hiw-screen-icon{font-size:22px;margin-bottom:8px}
 .hiw-screen-title{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
 .hiw-screen-desc{font-size:18px;color:var(--text2);line-height:1.5}
-.hiw-why{background:var(--purple-bg);border:1px solid rgba(188,140,255,.3);border-radius:12px;padding:22px 26px;display:flex;gap:18px;align-items:flex-start}
+.hiw-why{background:var(--purple-bg);border:1px solid rgba(188,140,255,.3);border-radius:12px;padding:22px 26px;display:flex;gap:18px;align-items:flex-start;margin-bottom:28px}
 .hiw-section-label{font-size:18px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+/* Industry tiles */
+.hiw-industries{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.hiw-ind{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 18px;text-align:center}
+.hiw-ind-icon{font-size:28px;margin-bottom:8px}
+.hiw-ind-name{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.hiw-ind-desc{font-size:18px;color:var(--text2);line-height:1.4}
+/* Supply chain flow */
+.hiw-flow{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px 26px;margin-bottom:28px}
+.hiw-flow-title{font-size:19px;font-weight:800;margin-bottom:16px;color:var(--text)}
+.hiw-flow-steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:12px}
+.hiw-flow-step{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;min-width:90px}
+.hiw-flow-icon{width:48px;height:48px;border-radius:12px;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);display:flex;align-items:center;justify-content:center;font-size:22px}
+.hiw-flow-label{font-size:18px;font-weight:700;color:var(--text);text-align:center}
+.hiw-flow-sub{font-size:18px;color:var(--text3);text-align:center;line-height:1.3}
+.hiw-flow-arrow{font-size:20px;color:var(--blue);flex-shrink:0;padding:0 4px}
+/* Extra info cards */
+.hiw-extras{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+.hiw-extra{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+.hiw-extra-icon{font-size:26px;margin-bottom:10px}
+.hiw-extra-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px}
+.hiw-extra-text{font-size:18px;color:var(--text2);line-height:1.6}
 
 /* SCROLLBAR */
 ::-webkit-scrollbar{width:6px}
@@ -427,8 +448,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
 
         <div class="hiw-hero">
-          <div class="hiw-hero-title">⚡ One add-on. Every industry. Zero disruption.</div>
-          <div class="hiw-hero-sub">LightView sits on top of whatever software you already use — manufacturing systems, POS systems, property management software — and adds AI monitoring and blockchain verification without changing how you operate.</div>
+          <div class="hiw-hero-title">⚡ One add-on. Any business. Any size. Zero disruption.</div>
+          <div class="hiw-hero-sub">LightView sits on top of whatever systems you already have and adds AI monitoring and blockchain verification. It doesn't matter if you're a one-person dry cleaner or a global aerospace company — if your business moves things, tracks things, or manages things, LightView makes it smarter and verifiable.</div>
         </div>
 
         <div class="hiw-analogy">
@@ -439,6 +460,83 @@ tr:hover td{background:rgba(255,255,255,.02)}
           </div>
         </div>
 
+        <div class="hiw-section-label">Works for every type of business</div>
+        <div class="hiw-industries">
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">👔</div>
+            <div class="hiw-ind-name">Dry Cleaner</div>
+            <div class="hiw-ind-desc">Track every garment from drop-off to rack to picked up. Zero lost items. Every step logged.</div>
+          </div>
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">🍽️</div>
+            <div class="hiw-ind-name">Restaurant Chain</div>
+            <div class="hiw-ind-desc">Ingredient freshness, cooler temps, supplier deliveries — flagged the moment something's off.</div>
+          </div>
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">🏭</div>
+            <div class="hiw-ind-name">Manufacturer</div>
+            <div class="hiw-ind-desc">Parts from 50 suppliers tracked through every stage of assembly to finished product.</div>
+          </div>
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">📦</div>
+            <div class="hiw-ind-name">Shipping & Logistics</div>
+            <div class="hiw-ind-desc">Plug into UPS, FedEx, or your own fleet. One unified view across every shipment, every carrier.</div>
+          </div>
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">🏥</div>
+            <div class="hiw-ind-name">Healthcare</div>
+            <div class="hiw-ind-desc">Medical device tracking, supply chain compliance, patient data audit trails — immutable and verifiable.</div>
+          </div>
+          <div class="hiw-ind">
+            <div class="hiw-ind-icon">🚀</div>
+            <div class="hiw-ind-name">Aerospace</div>
+            <div class="hiw-ind-desc">Every part on a spacecraft tracked through every supplier, test, and assembly step. No guessing.</div>
+          </div>
+        </div>
+
+        <div class="hiw-section-label">How supply chain tracking works</div>
+        <div class="hiw-flow">
+          <div class="hiw-flow-title">Every scan. Every step. Permanent record.</div>
+          <div class="hiw-flow-steps">
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">🌾</div>
+              <div class="hiw-flow-label">Ingredient</div>
+              <div class="hiw-flow-sub">Arrives &amp; scanned in</div>
+            </div>
+            <div class="hiw-flow-arrow">→</div>
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">⚗️</div>
+              <div class="hiw-flow-label">Batch</div>
+              <div class="hiw-flow-sub">Scanned into production</div>
+            </div>
+            <div class="hiw-flow-arrow">→</div>
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">📦</div>
+              <div class="hiw-flow-label">Packaged</div>
+              <div class="hiw-flow-sub">Scanned at warehouse</div>
+            </div>
+            <div class="hiw-flow-arrow">→</div>
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">🚚</div>
+              <div class="hiw-flow-label">Shipped</div>
+              <div class="hiw-flow-sub">Scanned at departure</div>
+            </div>
+            <div class="hiw-flow-arrow">→</div>
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">🏪</div>
+              <div class="hiw-flow-label">Received</div>
+              <div class="hiw-flow-sub">Scanned at destination</div>
+            </div>
+            <div class="hiw-flow-arrow">→</div>
+            <div class="hiw-flow-step">
+              <div class="hiw-flow-icon">✅</div>
+              <div class="hiw-flow-label">Sold</div>
+              <div class="hiw-flow-sub">End-to-end proven</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;font-size:18px;color:var(--text2);line-height:1.6">Every scan is timestamped and written to the blockchain. If there's ever a recall, a dispute, or an audit — you know in seconds exactly where every item was, when it moved, and who touched it. No digging through spreadsheets for three days.</div>
+        </div>
+
         <div class="hiw-section-label">The Three Layers</div>
         <div class="hiw-layers">
           <div class="hiw-layer layer-1">
@@ -446,7 +544,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="hiw-layer-body">
               <div class="hiw-tag">Your existing systems</div>
               <h3>What you already have — unchanged</h3>
-              <p>Your factory floor systems, your restaurant POS, your property management software, your financial records. LightView connects to these and reads from them. You don't change any of your current workflows, software, or equipment. Everything you already paid for keeps working exactly as it does today.</p>
+              <p>Your factory floor systems, warehouse scanners, shipping APIs, POS software, financial records — whatever you have. LightView connects to these and reads from them. You don't replace anything. Everything you already paid for keeps working exactly as it does today. Workers with handheld scanners keep scanning. Warehouse teams keep using their software. Nothing changes for them.</p>
             </div>
           </div>
           <div class="hiw-layer layer-2">
@@ -454,7 +552,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="hiw-layer-body">
               <div class="hiw-tag">AIVM — inside your network</div>
               <h3>AI that watches for what humans miss</h3>
-              <p>Our AI model runs inside your network and monitors your data continuously. It knows the rules you've set in plain English ("Alert if the cooler goes above 41°F") and learns your normal patterns over time. When something drifts or spikes — it flags it immediately and notifies the right people. <strong>Your raw data never leaves your building.</strong> Only the AI's conclusions go anywhere.</p>
+              <p>Our AI model runs inside your network and monitors your data continuously. It understands rules you write in plain English — "Alert if the cooler goes above 41°F" or "Flag if a shipment sits more than 4 hours." It learns your normal patterns and catches anomalies before they become problems. <strong>Your raw data never leaves your building.</strong> Only the AI's conclusions go anywhere.</p>
             </div>
           </div>
           <div class="hiw-layer layer-3">
@@ -462,17 +560,41 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="hiw-layer-body">
               <div class="hiw-tag">Lightchain — public blockchain</div>
               <h3>A timestamp no one can argue with</h3>
-              <p>When something important happens — an alert fires, a rule changes, a daily snapshot is taken — a permanent record is written to the Lightchain blockchain. This timestamp is cryptographically sealed. It can't be edited, backdated, or deleted. Your bank, your regulator, your auditor, your insurance company — <strong>anyone can independently verify it without asking you for anything.</strong></p>
+              <p>When something important happens — an alert fires, a scan completes, a rule changes, a daily snapshot is taken — a permanent record is written to the Lightchain blockchain. This timestamp is cryptographically sealed. It can't be edited, backdated, or deleted. Your bank, your regulator, your auditor, your insurance company — <strong>anyone can independently verify it without asking you for anything.</strong></p>
             </div>
           </div>
         </div>
 
-        <div class="hiw-section-label">What Each Screen Shows</div>
+        <div class="hiw-section-label">More than just monitoring</div>
+        <div class="hiw-extras">
+          <div class="hiw-extra">
+            <div class="hiw-extra-icon">📂</div>
+            <div class="hiw-extra-title">Years of historical data</div>
+            <div class="hiw-extra-text">Already have years of records in old systems, spreadsheets, or paper logs? LightView can pull all of that in and give it a blockchain backbone retroactively. Your entire history — searchable, verifiable, and AI-ready.</div>
+          </div>
+          <div class="hiw-extra">
+            <div class="hiw-extra-icon">🤝</div>
+            <div class="hiw-extra-title">Mergers &amp; acquisitions</div>
+            <div class="hiw-extra-text">Two companies merge with completely different systems? LightView becomes the unified layer over both. No forced migration. No choosing one system over the other. Both keep working — now with one view on top.</div>
+          </div>
+          <div class="hiw-extra">
+            <div class="hiw-extra-icon">🌍</div>
+            <div class="hiw-extra-title">Any language, any system</div>
+            <div class="hiw-extra-text">The type of business doesn't matter. The software doesn't matter. The country doesn't matter. If your business tracks something — parts, products, people, shipments, appointments — LightView understands it.</div>
+          </div>
+          <div class="hiw-extra">
+            <div class="hiw-extra-icon">📡</div>
+            <div class="hiw-extra-title">Connect anything</div>
+            <div class="hiw-extra-text">UPS shipping API, warehouse barcode scanners, QuickBooks, your own custom software, legacy mainframe data feeds — LightView is designed to connect to whatever you have, not the other way around.</div>
+          </div>
+        </div>
+
+        <div class="hiw-section-label">What each screen shows</div>
         <div class="hiw-screens">
           <div class="hiw-screen">
             <div class="hiw-screen-icon">📊</div>
             <div class="hiw-screen-title">Dashboard</div>
-            <div class="hiw-screen-desc">Live readings from every monitor point. Watch your data update in real time — temperatures, throughput, payment status, whatever matters for your business.</div>
+            <div class="hiw-screen-desc">Live readings from every monitor point. Watch your data update in real time — temperatures, throughput, shipment status, whatever matters for your business.</div>
           </div>
           <div class="hiw-screen">
             <div class="hiw-screen-icon">🚨</div>
@@ -482,12 +604,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="hiw-screen">
             <div class="hiw-screen-icon">📋</div>
             <div class="hiw-screen-title">Rules</div>
-            <div class="hiw-screen-desc">The plain-English rules AIVM follows. You write them like you're telling a team member what to watch for. Add or change rules anytime — every change is logged on-chain.</div>
+            <div class="hiw-screen-desc">The plain-English rules AIVM follows. Write them like you're telling a team member what to watch for. Add or change rules anytime — every change is logged on-chain.</div>
           </div>
           <div class="hiw-screen">
             <div class="hiw-screen-icon">🔗</div>
             <div class="hiw-screen-title">Blockchain Log</div>
-            <div class="hiw-screen-desc">The permanent audit trail. Every alert, every rule change, every daily snapshot — all with blockchain hashes that can be independently verified at any time.</div>
+            <div class="hiw-screen-desc">The permanent audit trail. Every alert, every scan, every rule change, every daily snapshot — all with blockchain hashes that can be independently verified at any time.</div>
           </div>
           <div class="hiw-screen">
             <div class="hiw-screen-icon">📄</div>
@@ -497,7 +619,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div class="hiw-screen">
             <div class="hiw-screen-icon">🏢</div>
             <div class="hiw-screen-title">Locations / Portfolio</div>
-            <div class="hiw-screen-desc">A bird's-eye view of all your properties, sites, or operations — all statuses at a glance. Switch companies at the top to see any client in your portfolio.</div>
+            <div class="hiw-screen-desc">Bird's-eye view of all your sites, warehouses, or operations at once. Switch companies at the top to manage any client in your portfolio.</div>
           </div>
         </div>
 
