@@ -1004,25 +1004,44 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ═══ GREAT BRIDGE FURNITURE — CALENDAR ═══ -->
     <div class="section" id="section-calendar">
-      <div class="sec-header" style="flex-wrap:wrap;gap:12px">
-        <h2 class="sec-title">📅 Delivery Calendar</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-out" onclick="calPrev()" style="font-size:17px;padding:8px 14px">◀ Prev</button>
-          <span id="calMonthLabel" style="font-size:20px;font-weight:700;color:var(--text);min-width:170px;text-align:center">—</span>
-          <button class="btn btn-out" onclick="calNext()" style="font-size:17px;padding:8px 14px">Next ▶</button>
-          <div style="width:1px;height:26px;background:var(--border);margin:0 4px"></div>
-          <button class="btn btn-blue" onclick="printScheduleForDate(calTodayStr())" style="font-size:17px;padding:8px 14px">🖨️ Today</button>
-          <button class="btn" onclick="printScheduleForDate(calTomorrowStr())" style="font-size:17px;padding:8px 14px;background:rgba(210,153,34,0.15);color:var(--yellow);border:1px solid rgba(210,153,34,0.3)">🖨️ Tomorrow</button>
+
+      <!-- ── MONTH VIEW ─────────────────────────────────────── -->
+      <div id="cal-month-view">
+        <div class="sec-header" style="flex-wrap:wrap;gap:12px">
+          <h2 class="sec-title">📅 Delivery Calendar</h2>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-out" onclick="calPrev()" style="font-size:18px;padding:8px 14px">◀ Prev</button>
+            <span id="calMonthLabel" style="font-size:20px;font-weight:700;color:var(--text);min-width:170px;text-align:center">—</span>
+            <button class="btn btn-out" onclick="calNext()" style="font-size:18px;padding:8px 14px">Next ▶</button>
+            <div style="width:1px;height:26px;background:var(--border);margin:0 4px"></div>
+            <button class="btn btn-blue" id="cal-month-add-btn" onclick="openDeliveryModal(calTodayStr(),null)" style="font-size:18px;padding:8px 16px">+ Add Event</button>
+          </div>
         </div>
+        <!-- Legend -->
+        <div style="display:flex;gap:20px;margin-bottom:18px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(63,185,80,0.5);border-radius:3px"></span><span style="color:var(--text2)">🚚 OUT — Customer Delivery</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(88,166,255,0.5);border-radius:3px"></span><span style="color:var(--text2)">📦 IN — Arriving</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(248,81,73,0.35);border-radius:3px"></span><span style="color:var(--text2)">🚫 Blocked / Closed</span></div>
+        </div>
+        <!-- Calendar Grid -->
+        <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px"></div>
       </div>
-      <!-- Legend -->
-      <div style="display:flex;gap:20px;margin-bottom:18px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(63,185,80,0.5);border-radius:3px"></span><span style="color:var(--text2)">🚚 Customer Delivery</span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(88,166,255,0.5);border-radius:3px"></span><span style="color:var(--text2)">📦 Arriving from Manufacturer</span></div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:18px"><span style="display:inline-block;width:14px;height:14px;background:rgba(248,81,73,0.35);border-radius:3px"></span><span style="color:var(--text2)">🚫 Blocked / Closed</span></div>
+
+      <!-- ── DAY VIEW (full-screen) ──────────────────────────── -->
+      <div id="cal-day-view" style="display:none">
+        <div class="sec-header" style="flex-wrap:wrap;gap:12px;margin-bottom:20px">
+          <button onclick="calBackToMonth()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer;font-weight:700">← Calendar</button>
+          <h2 class="sec-title" id="cal-day-title" style="flex:1;margin:0;min-width:200px">—</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-blue" id="cal-add-event-btn" onclick="openDeliveryModal('',null)" style="font-size:18px;padding:8px 16px">+ Add Event</button>
+            <button onclick="printDriverSheet()" style="background:rgba(63,185,80,0.15);color:var(--green);border:1px solid rgba(63,185,80,0.3);padding:8px 16px;border-radius:6px;font-size:18px;cursor:pointer;font-weight:700">🚚 Driver Sheet</button>
+            <button onclick="printOfficeSheet()" style="background:rgba(88,166,255,0.15);color:var(--blue);border:1px solid rgba(88,166,255,0.3);padding:8px 16px;border-radius:6px;font-size:18px;cursor:pointer;font-weight:700">📋 Office Sheet</button>
+            <button onclick="openCalDayModalForBlock(_calViewDate)" style="background:rgba(248,81,73,0.12);color:var(--red);border:1px solid rgba(248,81,73,0.3);padding:8px 14px;border-radius:6px;font-size:18px;cursor:pointer">🚫 Block Day</button>
+          </div>
+        </div>
+        <div id="cal-day-events" style="display:flex;flex-direction:column;gap:14px"></div>
       </div>
-      <!-- Calendar Grid -->
-      <div id="calGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px"></div>
+
     </div>
 
   </main>
@@ -1050,6 +1069,50 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div style="flex:1"></div>
         <button onclick="closeCalDayModal()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer">Close</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- DELIVERY EVENT MODAL -->
+<div id="calDeliveryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:9999;overflow-y:auto">
+  <div style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;margin:50px auto;max-width:580px;padding:28px;color:var(--text1)">
+    <div id="cdm-title" style="font-size:22px;font-weight:700;margin-bottom:20px">📅 Add Delivery Event</div>
+    <div style="display:grid;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <label style="font-size:18px;font-weight:600">Date *
+          <input id="cdm-date" type="date" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        </label>
+        <label style="font-size:18px;font-weight:600">Time
+          <input id="cdm-time" type="time" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        </label>
+      </div>
+      <label style="font-size:18px;font-weight:600">Direction *
+        <select id="cdm-direction" onchange="cdmDirChanged()" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+          <option value="OUT">🚚 OUT — Customer Delivery (going to customer)</option>
+          <option value="IN">📦 IN — Manufacturer Arrival (coming to store)</option>
+        </select>
+      </label>
+      <label style="font-size:18px;font-weight:600"><span id="cdm-name-label">Customer Name</span> *
+        <input id="cdm-name" type="text" placeholder="e.g. Smith Family" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Address
+        <input id="cdm-address" type="text" placeholder="Delivery address" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Phone
+        <input id="cdm-phone" type="text" placeholder="e.g. 757-555-0100" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Items
+        <textarea id="cdm-items" placeholder="What's being delivered or arriving..." rows="3" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box;resize:vertical"></textarea>
+      </label>
+      <label style="font-size:18px;font-weight:600">Notes
+        <textarea id="cdm-notes" placeholder="Driver notes, special instructions..." rows="2" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box;resize:vertical"></textarea>
+      </label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap">
+      <button onclick="saveDelivery()" style="background:var(--blue);color:#fff;border:none;padding:12px 22px;border-radius:6px;font-size:18px;font-weight:700;cursor:pointer">💾 Save Event</button>
+      <button id="cdm-delete-btn" onclick="deleteDelivery()" style="display:none;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid rgba(248,81,73,0.4);padding:12px 22px;border-radius:6px;font-size:18px;cursor:pointer">🗑️ Delete</button>
+      <div style="flex:1"></div>
+      <button onclick="closeDeliveryModal()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:12px 22px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
     </div>
   </div>
 </div>
@@ -2529,9 +2592,11 @@ function gbRestructureSheets(format) {
 // ===== DELIVERY CALENDAR =====
 let _calYear  = new Date().getFullYear();
 let _calMonth = new Date().getMonth() + 1;
-let _calEvents = { deliveries:[], arrivals:[], blocked:[] };
+let _calEvents = { deliveries:[], arrivals:[], blocked:[], events:[] };
 let _calClickedDate = null;
 let _calClickedBlockId = null;
+let _calViewDate = null;   // date shown in day view (null = month view)
+let _delEditId = null;     // delivery event being edited (null = new)
 const _MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function calTodayStr() {
@@ -2545,6 +2610,15 @@ function calTomorrowStr() {
 function _calNiceDate(dateStr) {
   return new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
 }
+function _fmtTime(t) {
+  if(!t) return '';
+  const parts=t.split(':'); const h=parseInt(parts[0],10); const m=parts[1]||'00';
+  return (h%12||12)+':'+m+' '+(h>=12?'PM':'AM');
+}
+function _esc(s) {
+  if(!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
 function calPrev() { _calMonth--; if(_calMonth<1){_calMonth=12;_calYear--;} loadCalendar(); }
 function calNext() { _calMonth++; if(_calMonth>12){_calMonth=1;_calYear++;} loadCalendar(); }
@@ -2554,11 +2628,18 @@ async function loadCalendar() {
   if(lbl) lbl.textContent = '…';
   try {
     const r = await fetch(`${BACKEND}/api/gb/calendar?year=${_calYear}&month=${_calMonth}`);
-    _calEvents = await r.json();
+    const d = await r.json();
+    _calEvents = {deliveries:[],arrivals:[],blocked:[],events:[],...d};
   } catch(e) {
-    _calEvents = {deliveries:[],arrivals:[],blocked:[]};
+    _calEvents = {deliveries:[],arrivals:[],blocked:[],events:[]};
   }
   renderCalendar();
+  if(_calViewDate) {
+    document.getElementById('cal-month-view').style.display='none';
+    document.getElementById('cal-day-view').style.display='';
+    document.getElementById('cal-day-title').textContent=_calNiceDate(_calViewDate);
+    renderDayView(_calViewDate);
+  }
 }
 
 function renderCalendar() {
@@ -2576,69 +2657,132 @@ function renderCalendar() {
     const ds=`${_calYear}-${String(_calMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const delivs=(_calEvents.deliveries||[]).filter(d=>d.delivery_date===ds);
     const arrivs=(_calEvents.arrivals||[]).filter(a=>a.expected_date===ds);
+    const evts=(_calEvents.events||[]).filter(e=>e.date===ds);
     const block=(_calEvents.blocked||[]).find(b=>b.date===ds);
+    const hasOut=delivs.length>0||evts.some(e=>e.direction==='OUT');
+    const hasIn=arrivs.length>0||evts.some(e=>e.direction==='IN');
     let bg='var(--card)',border='1px solid var(--border)';
     if(block){bg='rgba(248,81,73,0.12)';border='1px solid rgba(248,81,73,0.4)';}
-    else if(delivs.length&&arrivs.length){bg='rgba(188,140,255,0.08)';border='1px solid rgba(188,140,255,0.3)';}
-    else if(delivs.length){bg='rgba(63,185,80,0.08)';border='1px solid rgba(63,185,80,0.3)';}
-    else if(arrivs.length){bg='rgba(88,166,255,0.08)';border='1px solid rgba(88,166,255,0.3)';}
+    else if(hasOut&&hasIn){bg='rgba(188,140,255,0.08)';border='1px solid rgba(188,140,255,0.3)';}
+    else if(hasOut){bg='rgba(63,185,80,0.08)';border='1px solid rgba(63,185,80,0.3)';}
+    else if(hasIn){bg='rgba(88,166,255,0.08)';border='1px solid rgba(88,166,255,0.3)';}
     const isToday=ds===today;
     const ring=isToday?'outline:2px solid var(--blue);outline-offset:1px;':'';
+    // Build time chips — sort by time, no-time to end
+    let chips=[];
+    evts.forEach(e=>chips.push({time:e.time||'',icon:e.direction==='IN'?'📦':'🚚',label:(e.time?_fmtTime(e.time)+' ':'')+_esc(e.name),color:e.direction==='IN'?'var(--blue)':'var(--green)'}));
+    delivs.forEach(d=>chips.push({time:'',icon:'🚚',label:_esc(d.customer_name),color:'var(--green)'}));
+    arrivs.forEach(a=>chips.push({time:'',icon:'📦',label:_esc(a.manufacturer||a.customer_name),color:'var(--blue)'}));
+    chips.sort((a,b)=>(a.time||'ZZ').localeCompare(b.time||'ZZ'));
+    const MAX=3; const shown=chips.slice(0,MAX); const extra=chips.length-MAX;
     html+=`<div onclick="calDayClick('${ds}')" style="background:${bg};border:${border};border-radius:8px;padding:6px 4px;cursor:pointer;min-height:60px;${ring}" onmouseover="this.style.opacity='.75'" onmouseout="this.style.opacity='1'">
       <div style="font-size:16px;font-weight:700;color:${isToday?'var(--blue)':'var(--text)'};margin-bottom:2px">${day}</div>
-      ${block?`<div style="font-size:11px;color:var(--red);line-height:1.2">🚫 ${block.reason}</div>`:''}
-      ${delivs.map(d=>`<div style="font-size:11px;color:var(--green);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3">🚚 ${d.customer_name}</div>`).join('')}
-      ${arrivs.map(a=>`<div style="font-size:11px;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3">📦 ${a.manufacturer||a.customer_name}</div>`).join('')}
+      ${block?`<div style="font-size:11px;color:var(--red);line-height:1.2">🚫 ${_esc(block.reason)}</div>`:''}
+      ${shown.map(c=>`<div style="font-size:11px;color:${c.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3">${c.icon} ${c.label}</div>`).join('')}
+      ${extra>0?`<div style="font-size:11px;color:var(--text3);line-height:1.3">+${extra} more</div>`:''}
     </div>`;
   }
   grid.innerHTML=html;
 }
 
-function calDayClick(dateStr) {
-  _calClickedDate=dateStr;
+// ── Day View ─────────────────────────────────────────────────────
+function calDayClick(dateStr) { showDayView(dateStr); }
+
+function showDayView(dateStr) {
+  _calViewDate=dateStr;
+  const [yr,mo]=dateStr.split('-').map(Number);
+  if(_calYear!==yr||_calMonth!==mo){ _calYear=yr; _calMonth=mo; loadCalendar(); return; }
+  document.getElementById('cal-month-view').style.display='none';
+  document.getElementById('cal-day-view').style.display='';
+  document.getElementById('cal-day-title').textContent=_calNiceDate(dateStr);
+  renderDayView(dateStr);
+}
+
+function calBackToMonth() {
+  _calViewDate=null;
+  document.getElementById('cal-day-view').style.display='none';
+  document.getElementById('cal-month-view').style.display='';
+}
+
+function _calDayEvts(dateStr) {
   const delivs=(_calEvents.deliveries||[]).filter(d=>d.delivery_date===dateStr);
   const arrivs=(_calEvents.arrivals||[]).filter(a=>a.expected_date===dateStr);
+  const evts=(_calEvents.events||[]).filter(e=>e.date===dateStr);
+  let all=[];
+  delivs.forEach(d=>all.push({type:'delivery',time:'',direction:'OUT',name:d.customer_name,address:'',phone:d.phone||'',items:d.items||'',notes:'',order_id:d.id,status:d.status}));
+  arrivs.forEach(a=>all.push({type:'arrival',time:'',direction:'IN',name:a.manufacturer||a.customer_name,address:'',phone:'',items:a.items||'',notes:'',order_id:a.id,customer:a.customer_name}));
+  evts.forEach(e=>all.push({type:'event',id:e.id,time:e.time||'',direction:e.direction||'OUT',name:e.name,address:e.address||'',phone:e.phone||'',items:e.items||'',notes:e.notes||''}));
+  all.sort((a,b)=>(a.time||'ZZ').localeCompare(b.time||'ZZ'));
+  return all;
+}
+
+function renderDayView(dateStr) {
+  const block=(_calEvents.blocked||[]).find(b=>b.date===dateStr);
+  const evts=_calDayEvts(dateStr);
+  const container=document.getElementById('cal-day-events');
+  if(!container) return;
+  let html='';
+  if(block){
+    html+=`<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.4);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <div style="color:var(--red);font-weight:700;font-size:20px">🚫 BLOCKED: ${_esc(block.reason)}</div>
+        ${block.note?`<div style="color:var(--text2);font-size:18px;margin-top:4px">${_esc(block.note)}</div>`:''}
+      </div>
+      <button onclick="calUnblockDayId(${block.id})" style="background:rgba(63,185,80,0.2);color:var(--green);border:1px solid rgba(63,185,80,0.4);padding:8px 14px;border-radius:6px;font-size:18px;cursor:pointer;white-space:nowrap">✅ Remove Block</button>
+    </div>`;
+  }
+  if(evts.length===0&&!block){
+    html+=`<div style="color:var(--text3);font-size:20px;padding:40px 0;text-align:center">Nothing scheduled — click &quot;+ Add Event&quot; to add a delivery.</div>`;
+  } else {
+    evts.forEach(e=>{
+      const isOut=e.direction==='OUT';
+      const bc=isOut?'rgba(63,185,80,0.35)':'rgba(88,166,255,0.35)';
+      const bg=isOut?'rgba(63,185,80,0.06)':'rgba(88,166,255,0.06)';
+      const lc=isOut?'var(--green)':'var(--blue)';
+      const badge=isOut?'🚚 OUT — Customer Delivery':'📦 IN — Arriving';
+      const badgeBg=isOut?'rgba(63,185,80,0.15)':'rgba(88,166,255,0.15)';
+      const editable=e.type==='event';
+      html+=`<div style="background:${bg};border:2px solid ${bc};border-radius:10px;padding:16px 20px">
+        <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="margin-bottom:8px">${e.time?`<span style="font-size:22px;font-weight:800;color:var(--text)">${_fmtTime(e.time)}&nbsp;&nbsp;</span>`:''}<span style="font-size:14px;font-weight:700;color:${lc};background:${badgeBg};padding:3px 10px;border-radius:20px">${badge}</span></div>
+            <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:8px">${_esc(e.name)}</div>
+            ${e.address?`<div style="font-size:18px;color:var(--text2);margin-bottom:4px">📍 ${_esc(e.address)}</div>`:''}
+            ${e.phone?`<div style="font-size:18px;color:var(--text2);margin-bottom:4px">📞 ${_esc(e.phone)}</div>`:''}
+            ${e.items?`<div style="font-size:18px;color:var(--text);margin-top:8px;line-height:1.5"><strong>Items:</strong> ${_esc(e.items)}</div>`:''}
+            ${e.notes?`<div style="font-size:17px;color:var(--text3);margin-top:6px;font-style:italic">📝 ${_esc(e.notes)}</div>`:''}
+            ${e.type==='delivery'?`<div style="font-size:16px;color:var(--text3);margin-top:6px">Order #${e.order_id} · ${_esc(e.status||'pending')} <em style="font-size:14px">(from Orders tab)</em></div>`:''}
+            ${e.type==='arrival'?`<div style="font-size:16px;color:var(--text3);margin-top:6px">For: ${_esc(e.customer||'')} · Order #${e.order_id} <em style="font-size:14px">(from Orders tab)</em></div>`:''}
+          </div>
+          ${editable?`<button onclick="openDeliveryModal('${dateStr}',${e.id})" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:8px 14px;border-radius:6px;font-size:18px;cursor:pointer;white-space:nowrap">✏️ Edit</button>`:''}
+        </div>
+      </div>`;
+    });
+  }
+  container.innerHTML=html;
+}
+
+// ── Block / Unblock from Day View ────────────────────────────────
+function openCalDayModalForBlock(dateStr) {
+  if(!dateStr) return;
+  _calClickedDate=dateStr;
   const block=(_calEvents.blocked||[]).find(b=>b.date===dateStr);
   _calClickedBlockId=block?block.id:null;
   document.getElementById('calDayModalTitle').textContent=_calNiceDate(dateStr);
-  let html='';
-  if(block){
-    html+=`<div style="background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);border-radius:8px;padding:12px 14px;margin-bottom:14px">
-      <div style="color:var(--red);font-weight:700;font-size:18px">🚫 BLOCKED: ${block.reason}</div>
-      ${block.note?`<div style="color:var(--text2);font-size:17px;margin-top:4px">${block.note}</div>`:''}
-    </div>`;
-  }
-  if(delivs.length){
-    html+=`<div style="font-weight:700;font-size:19px;color:var(--green);margin-bottom:10px">🚚 Customer Deliveries (${delivs.length})</div>`;
-    delivs.forEach(d=>{
-      html+=`<div style="background:rgba(63,185,80,0.06);border:1px solid rgba(63,185,80,0.2);border-radius:8px;padding:12px 14px;margin-bottom:10px">
-        <div style="font-weight:700;font-size:18px;margin-bottom:4px">${d.customer_name}</div>
-        ${d.phone?`<div style="color:var(--text2);font-size:17px">📞 ${d.phone}</div>`:''}
-        ${d.items?`<div style="font-size:17px;margin-top:6px;line-height:1.5;color:var(--text)">📋 <strong>Items:</strong> ${d.items}</div>`:''}
-        <div style="color:var(--text3);font-size:16px;margin-top:6px">Order #${d.id} · ${d.status||'pending'}</div>
-      </div>`;
-    });
-  }
-  if(arrivs.length){
-    html+=`<div style="font-weight:700;font-size:19px;color:var(--blue);margin-bottom:10px${delivs.length?';margin-top:14px':''}">📦 Arriving from Manufacturers (${arrivs.length})</div>`;
-    arrivs.forEach(a=>{
-      html+=`<div style="background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.2);border-radius:8px;padding:12px 14px;margin-bottom:10px">
-        <div style="font-weight:700;font-size:18px;margin-bottom:4px">${a.manufacturer||'Unknown Manufacturer'}</div>
-        ${a.items?`<div style="font-size:17px;margin-top:6px;line-height:1.5;color:var(--text)">📋 <strong>Items:</strong> ${a.items}</div>`:''}
-        <div style="color:var(--text3);font-size:16px;margin-top:6px">For: ${a.customer_name} · Order #${a.id}</div>
-      </div>`;
-    });
-  }
-  if(!block&&!delivs.length&&!arrivs.length){
-    html+=`<div style="color:var(--text3);font-size:18px;padding:20px 0;text-align:center">Nothing scheduled for this day.</div>`;
-  }
-  html+=`<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-    <button onclick="printScheduleForDate('${dateStr}')" style="background:rgba(88,166,255,0.15);color:var(--blue);border:1px solid rgba(88,166,255,0.3);padding:10px 16px;border-radius:6px;font-size:17px;cursor:pointer;font-weight:700">🖨️ Print This Day's Schedule</button>
-  </div>`;
-  document.getElementById('calDayModalContent').innerHTML=html;
+  document.getElementById('calDayModalContent').innerHTML='';
   document.getElementById('calBlockBtn').style.display=block?'none':'';
   document.getElementById('calUnblockBtn').style.display=block?'':'none';
   document.getElementById('calDayModal').style.display='';
+}
+
+async function calUnblockDayId(blockId) {
+  if(!confirm('Remove the block from this day?')) return;
+  try {
+    const r=await fetch(BACKEND+'/api/gb/blocked-days/'+blockId,{method:'DELETE'});
+    if(!r.ok) throw new Error();
+    toast('✅ Block removed');
+    loadCalendar();
+  } catch{toast('Failed to remove block');}
 }
 
 async function calBlockDay() {
@@ -2667,92 +2811,241 @@ async function calUnblockDay() {
 
 function closeCalDayModal() {
   document.getElementById('calDayModal').style.display='none';
-  _calClickedDate=null;
-  _calClickedBlockId=null;
+  _calClickedDate=null; _calClickedBlockId=null;
 }
 
-async function printScheduleForDate(dateStr) {
-  let data;
-  const [yr,mo]=dateStr.split('-').map(Number);
-  if(_calYear===yr&&_calMonth===mo&&(_calEvents.deliveries||_calEvents.arrivals)){
-    data=_calEvents;
+// ── Delivery Event Modal ──────────────────────────────────────────
+function cdmDirChanged() {
+  const dir=document.getElementById('cdm-direction').value;
+  document.getElementById('cdm-name-label').textContent=dir==='IN'?'Manufacturer / Supplier':'Customer Name';
+}
+
+function openDeliveryModal(dateStr, evtId) {
+  dateStr=dateStr||_calViewDate||calTodayStr();
+  _delEditId=evtId||null;
+  const title=document.getElementById('cdm-title');
+  const delBtn=document.getElementById('cdm-delete-btn');
+  if(evtId){
+    const evt=(_calEvents.events||[]).find(e=>e.id===evtId);
+    title.textContent='✏️ Edit Delivery Event';
+    delBtn.style.display='';
+    document.getElementById('cdm-date').value=dateStr;
+    document.getElementById('cdm-time').value=evt?evt.time||'':'';
+    document.getElementById('cdm-direction').value=evt?evt.direction||'OUT':'OUT';
+    document.getElementById('cdm-name').value=evt?evt.name||'':'';
+    document.getElementById('cdm-address').value=evt?evt.address||'':'';
+    document.getElementById('cdm-phone').value=evt?evt.phone||'':'';
+    document.getElementById('cdm-items').value=evt?evt.items||'':'';
+    document.getElementById('cdm-notes').value=evt?evt.notes||'':'';
   } else {
-    try {
-      const r=await fetch(`${BACKEND}/api/gb/calendar?year=${yr}&month=${mo}`);
-      data=await r.json();
-    } catch { data={deliveries:[],arrivals:[],blocked:[]}; }
+    title.textContent='📅 Add Delivery Event';
+    delBtn.style.display='none';
+    document.getElementById('cdm-date').value=dateStr;
+    document.getElementById('cdm-time').value='';
+    document.getElementById('cdm-direction').value='OUT';
+    document.getElementById('cdm-name').value='';
+    document.getElementById('cdm-address').value='';
+    document.getElementById('cdm-phone').value='';
+    document.getElementById('cdm-items').value='';
+    document.getElementById('cdm-notes').value='';
   }
+  cdmDirChanged();
+  document.getElementById('calDeliveryModal').style.display='';
+}
+
+function closeDeliveryModal() {
+  document.getElementById('calDeliveryModal').style.display='none';
+  _delEditId=null;
+}
+
+async function saveDelivery() {
+  const date=document.getElementById('cdm-date').value.trim();
+  const name=document.getElementById('cdm-name').value.trim();
+  if(!date||!name){toast('Date and name are required');return;}
+  const payload={date,time:document.getElementById('cdm-time').value.trim(),direction:document.getElementById('cdm-direction').value,name,address:document.getElementById('cdm-address').value.trim(),phone:document.getElementById('cdm-phone').value.trim(),items:document.getElementById('cdm-items').value.trim(),notes:document.getElementById('cdm-notes').value.trim()};
+  try {
+    let r;
+    if(_delEditId){
+      r=await fetch(BACKEND+'/api/gb/deliveries/'+_delEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    } else {
+      r=await fetch(BACKEND+'/api/gb/deliveries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    }
+    if(!r.ok) throw new Error();
+    toast(_delEditId?'✅ Event updated':'✅ Event added');
+    closeDeliveryModal();
+    loadCalendar();
+  } catch{toast('Failed to save event');}
+}
+
+async function deleteDelivery() {
+  if(!_delEditId) return;
+  if(!confirm('Delete this delivery event?')) return;
+  try {
+    const r=await fetch(BACKEND+'/api/gb/deliveries/'+_delEditId,{method:'DELETE'});
+    if(!r.ok) throw new Error();
+    toast('🗑️ Event deleted');
+    closeDeliveryModal();
+    loadCalendar();
+  } catch{toast('Failed to delete event');}
+}
+
+// ── Print ─────────────────────────────────────────────────────────
+async function _calGetDayData(dateStr) {
+  const [yr,mo]=dateStr.split('-').map(Number);
+  if(_calYear===yr&&_calMonth===mo) return _calEvents;
+  try {
+    const r=await fetch(`${BACKEND}/api/gb/calendar?year=${yr}&month=${mo}`);
+    return await r.json();
+  } catch { return {deliveries:[],arrivals:[],blocked:[],events:[]}; }
+}
+
+function _calDayEvtsFrom(data, dateStr) {
   const delivs=(data.deliveries||[]).filter(d=>d.delivery_date===dateStr);
   const arrivs=(data.arrivals||[]).filter(a=>a.expected_date===dateStr);
-  const nice=_calNiceDate(dateStr);
-  let body='';
-  body+=`<h2 class="green">🚚 Customer Deliveries — Going Out (${delivs.length})</h2>`;
-  if(!delivs.length){
-    body+=`<p class="empty">No customer deliveries scheduled for this day.</p>`;
-  } else {
-    delivs.forEach((d,i)=>{
-      body+=`<div class="item">
-        <div class="item-name"><span class="cb"></span>#${i+1}&nbsp;&nbsp;${d.customer_name}</div>
-        ${d.phone?`<div class="item-field">📞 ${d.phone}</div>`:''}
-        <div class="item-goods-label">Items to pull &amp; load onto truck:</div>
-        <div class="item-goods">${d.items||'<span style="color:#c00">&#9888; No items listed — check order record</span>'}</div>
-        <div class="item-meta">Order #${d.id}&nbsp;&nbsp;|&nbsp;&nbsp;Status: ${d.status||'pending'}</div>
-      </div>`;
-    });
-  }
-  body+=`<h2 class="blue">📦 Arriving from Manufacturers (${arrivs.length})</h2>`;
-  if(!arrivs.length){
-    body+=`<p class="empty">No manufacturer deliveries expected today.</p>`;
-  } else {
-    arrivs.forEach((a,i)=>{
-      body+=`<div class="item">
-        <div class="item-name"><span class="cb"></span>${a.manufacturer||'Unknown Manufacturer'}</div>
-        <div class="item-goods-label">Items arriving:</div>
-        <div class="item-goods">${a.items||'—'}</div>
-        <div class="item-meta">For customer: ${a.customer_name}&nbsp;&nbsp;|&nbsp;&nbsp;Order #${a.id}</div>
-      </div>`;
-    });
-  }
+  const evts=(data.events||[]).filter(e=>e.date===dateStr);
+  let all=[];
+  delivs.forEach(d=>all.push({type:'delivery',time:'',direction:'OUT',name:d.customer_name,address:'',phone:d.phone||'',items:d.items||'',notes:'',order_id:d.id,status:d.status}));
+  arrivs.forEach(a=>all.push({type:'arrival',time:'',direction:'IN',name:a.manufacturer||a.customer_name,address:'',phone:'',items:a.items||'',notes:'',order_id:a.id,customer:a.customer_name}));
+  evts.forEach(e=>all.push({type:'event',id:e.id,time:e.time||'',direction:e.direction||'OUT',name:e.name,address:e.address||'',phone:e.phone||'',items:e.items||'',notes:e.notes||''}));
+  all.sort((a,b)=>(a.time||'ZZ').localeCompare(b.time||'ZZ'));
+  return all;
+}
+
+function _openPrintWin(html) {
   const w=window.open('','_blank');
   if(!w){toast('Allow pop-ups to print');return;}
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>GBF Schedule — ${dateStr}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;padding:24px 32px}
-.hdr{border-bottom:3px solid #222;padding-bottom:12px;margin-bottom:20px}
-.hdr h1{font-size:24px;margin-bottom:4px}
-.hdr .date{font-size:18px;color:#333;font-weight:700}
-.hdr .printed{font-size:13px;color:#888;margin-top:4px}
-h2{font-size:18px;margin:22px 0 12px;padding:8px 12px;border-radius:4px;font-weight:700}
-h2.green{color:#0a5e12;background:#e6f4e8;border-left:4px solid #1a7a13}
-h2.blue{color:#0a3a6e;background:#e8f0fa;border-left:4px solid #0a5eb0}
-.item{border:1px solid #ccc;border-radius:6px;padding:14px 18px;margin-bottom:12px;page-break-inside:avoid}
-.item-name{font-size:20px;font-weight:700;margin-bottom:6px}
-.item-field{font-size:15px;color:#333;margin-bottom:4px}
-.item-goods-label{font-size:13px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.5px;margin-top:8px;margin-bottom:4px}
-.item-goods{font-size:15px;line-height:1.7;margin-left:8px;color:#111}
-.item-meta{font-size:13px;color:#777;margin-top:10px;border-top:1px dashed #ddd;padding-top:6px}
-.cb{display:inline-block;width:16px;height:16px;border:2px solid #333;border-radius:2px;margin-right:8px;vertical-align:middle}
-.empty{color:#888;font-style:italic;padding:10px 0}
-.footer{margin-top:32px;padding-top:12px;border-top:1px solid #ccc;font-size:13px;color:#777;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
-@media print{body{padding:12px 18px}.item{break-inside:avoid}}
-</style></head><body>
-<div class="hdr">
-  <h1>&#128715; Great Bridge Furniture</h1>
-  <div class="date">${nice}</div>
-  <div class="printed">Printed: ${new Date().toLocaleString()} | Chesapeake, VA</div>
-</div>
-${body}
-<div class="footer">
-  <span>Great Bridge Furniture — Chesapeake, VA</span>
-  <span>lightview.win</span>
-</div>
-</body></html>`);
+  w.document.write(html);
   w.document.close();
   w.focus();
   setTimeout(()=>w.print(),400);
 }
+
+async function printDriverSheet(dateStr) {
+  dateStr=dateStr||_calViewDate||calTodayStr();
+  const data=await _calGetDayData(dateStr);
+  const evts=_calDayEvtsFrom(data,dateStr);
+  const nice=_calNiceDate(dateStr);
+  const out=evts.filter(e=>e.direction==='OUT');
+  const inb=evts.filter(e=>e.direction==='IN');
+  let body=`<h2 class="green">🚚 Outgoing Deliveries (${out.length})</h2>`;
+  if(!out.length){body+=`<p class="empty">No outgoing deliveries.</p>`;}
+  else {
+    out.forEach((e,i)=>{
+      body+=`<div class="item"><div class="item-num">${i+1}</div><div class="item-body">
+        ${e.time?`<div class="item-time">${_fmtTime(e.time)}</div>`:''}
+        <div class="item-name"><span class="cb"></span>${e.name}</div>
+        <div class="item-addr">📍 ${e.address||'No address — check order record'}</div>
+        ${e.phone?`<div class="item-field">📞 ${e.phone}</div>`:''}
+        ${e.items?`<div class="item-goods-label">Items to load:</div><div class="item-goods">${e.items}</div>`:''}
+      </div></div>`;
+    });
+  }
+  if(inb.length){
+    body+=`<h2 class="blue">📦 Arriving from Manufacturers (${inb.length})</h2>`;
+    inb.forEach((e,i)=>{
+      body+=`<div class="item"><div class="item-num">${i+1}</div><div class="item-body">
+        ${e.time?`<div class="item-time">${_fmtTime(e.time)}</div>`:''}
+        <div class="item-name">${e.name}</div>
+        ${e.items?`<div class="item-goods-label">Items arriving:</div><div class="item-goods">${e.items}</div>`:''}
+      </div></div>`;
+    });
+  }
+  _openPrintWin(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Driver Sheet</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:16px;color:#111;padding:20px 28px}
+.hdr{border-bottom:4px solid #222;padding-bottom:10px;margin-bottom:18px}
+.hdr h1{font-size:26px} .hdr .date{font-size:20px;font-weight:700;margin-top:4px} .hdr .co{font-size:14px;color:#555;margin-top:3px}
+h2{font-size:17px;margin:18px 0 10px;padding:7px 12px;border-radius:4px;font-weight:700}
+h2.green{color:#0a5e12;background:#e6f4e8;border-left:4px solid #1a7a13}
+h2.blue{color:#0a3a6e;background:#e8f0fa;border-left:4px solid #0a5eb0}
+.item{display:flex;gap:14px;border:1px solid #ccc;border-radius:6px;padding:12px 14px;margin-bottom:10px;page-break-inside:avoid}
+.item-num{font-size:22px;font-weight:700;color:#999;min-width:28px}
+.item-body{flex:1}
+.item-time{font-size:20px;font-weight:800;color:#111;margin-bottom:4px}
+.item-name{font-size:20px;font-weight:700;margin-bottom:5px}
+.item-addr{font-size:16px;color:#333;margin-bottom:3px}
+.item-field{font-size:15px;color:#333;margin-bottom:3px}
+.item-goods-label{font-size:12px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.5px;margin:7px 0 3px}
+.item-goods{font-size:15px;line-height:1.7;margin-left:6px}
+.cb{display:inline-block;width:16px;height:16px;border:2px solid #333;border-radius:2px;margin-right:8px;vertical-align:middle}
+.empty{color:#888;font-style:italic;padding:8px 0}
+.footer{margin-top:28px;padding-top:10px;border-top:1px solid #ccc;font-size:12px;color:#777;display:flex;justify-content:space-between}
+@media print{body{padding:10px 14px}.item{break-inside:avoid}}
+</style></head><body>
+<div class="hdr"><h1>🚚 Driver Sheet — Great Bridge Furniture</h1><div class="date">${nice}</div><div class="co">1325 S Battlefield Blvd · Chesapeake VA 23322 · 757-482-6622</div></div>
+${body}
+<div class="footer"><span>GBF Driver Sheet</span><span>Printed: ${new Date().toLocaleString()}</span></div>
+</body></html>`);
+}
+
+async function printOfficeSheet(dateStr) {
+  dateStr=dateStr||_calViewDate||calTodayStr();
+  const data=await _calGetDayData(dateStr);
+  const evts=_calDayEvtsFrom(data,dateStr);
+  const block=(data.blocked||[]).find(b=>b.date===dateStr);
+  const nice=_calNiceDate(dateStr);
+  const out=evts.filter(e=>e.direction==='OUT');
+  const inb=evts.filter(e=>e.direction==='IN');
+  let body='';
+  if(block) body+=`<div class="block-banner">🚫 DAY BLOCKED: ${block.reason}${block.note?' — '+block.note:''}</div>`;
+  body+=`<h2 class="green">🚚 Customer Deliveries — Outgoing (${out.length})</h2>`;
+  if(!out.length){body+=`<p class="empty">No outgoing deliveries.</p>`;}
+  else {
+    out.forEach((e,i)=>{
+      body+=`<div class="item">
+        ${e.time?`<div class="item-time">${_fmtTime(e.time)}</div>`:''}
+        <div class="item-name"><span class="cb"></span>#${i+1}&nbsp;${e.name}</div>
+        ${e.address?`<div class="item-field">📍 ${e.address}</div>`:''}
+        ${e.phone?`<div class="item-field">📞 ${e.phone}</div>`:''}
+        ${e.items?`<div class="item-goods-label">Items:</div><div class="item-goods">${e.items}</div>`:''}
+        ${e.notes?`<div class="item-notes">📝 ${e.notes}</div>`:''}
+        ${e.type==='delivery'?`<div class="item-meta">Order #${e.order_id} · ${e.status||'pending'}</div>`:''}
+      </div>`;
+    });
+  }
+  body+=`<h2 class="blue">📦 Incoming from Manufacturers (${inb.length})</h2>`;
+  if(!inb.length){body+=`<p class="empty">No inbound deliveries.</p>`;}
+  else {
+    inb.forEach((e,i)=>{
+      body+=`<div class="item">
+        ${e.time?`<div class="item-time">${_fmtTime(e.time)}</div>`:''}
+        <div class="item-name"><span class="cb"></span>#${i+1}&nbsp;${e.name}</div>
+        ${e.items?`<div class="item-goods-label">Items arriving:</div><div class="item-goods">${e.items}</div>`:''}
+        ${e.notes?`<div class="item-notes">📝 ${e.notes}</div>`:''}
+        ${e.type==='arrival'?`<div class="item-meta">For: ${e.customer||''} · Order #${e.order_id}</div>`:''}
+      </div>`;
+    });
+  }
+  _openPrintWin(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Office Sheet</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:15px;color:#111;padding:22px 30px}
+.hdr{border-bottom:3px solid #222;padding-bottom:12px;margin-bottom:20px}
+.hdr h1{font-size:24px;margin-bottom:4px} .hdr .date{font-size:18px;font-weight:700;color:#333} .hdr .printed{font-size:13px;color:#888;margin-top:4px}
+.block-banner{background:#fee;border:1px solid #f00;color:#900;font-weight:700;font-size:17px;padding:10px 14px;border-radius:6px;margin-bottom:14px}
+h2{font-size:18px;margin:20px 0 11px;padding:8px 12px;border-radius:4px;font-weight:700}
+h2.green{color:#0a5e12;background:#e6f4e8;border-left:4px solid #1a7a13}
+h2.blue{color:#0a3a6e;background:#e8f0fa;border-left:4px solid #0a5eb0}
+.item{border:1px solid #ccc;border-radius:6px;padding:13px 17px;margin-bottom:11px;page-break-inside:avoid}
+.item-time{font-size:20px;font-weight:800;color:#111;margin-bottom:4px}
+.item-name{font-size:19px;font-weight:700;margin-bottom:5px}
+.item-field{font-size:15px;color:#333;margin-bottom:3px}
+.item-goods-label{font-size:12px;font-weight:700;text-transform:uppercase;color:#555;letter-spacing:.5px;margin:8px 0 3px}
+.item-goods{font-size:15px;line-height:1.7;margin-left:7px}
+.item-notes{font-size:14px;color:#666;font-style:italic;margin-top:7px;padding-top:6px;border-top:1px dashed #ddd}
+.item-meta{font-size:13px;color:#777;margin-top:8px;border-top:1px dashed #ddd;padding-top:6px}
+.cb{display:inline-block;width:15px;height:15px;border:2px solid #333;border-radius:2px;margin-right:7px;vertical-align:middle}
+.empty{color:#888;font-style:italic;padding:8px 0}
+.footer{margin-top:28px;padding-top:10px;border-top:1px solid #ccc;font-size:13px;color:#777;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+@media print{body{padding:10px 14px}.item{break-inside:avoid}}
+</style></head><body>
+<div class="hdr"><h1>📋 Daily Schedule — Great Bridge Furniture</h1><div class="date">${nice}</div><div class="printed">Printed: ${new Date().toLocaleString()} | lightview.win</div></div>
+${body}
+<div class="footer"><span>Great Bridge Furniture — Chesapeake, VA</span><span>lightview.win</span></div>
+</body></html>`);
+}
+
+// alias kept for backward compat
+async function printScheduleForDate(dateStr) { return printOfficeSheet(dateStr); }
 
 // ===== MOBILE HAMBURGER =====
 function toggleSidebar() {
