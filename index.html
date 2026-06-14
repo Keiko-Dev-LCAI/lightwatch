@@ -290,7 +290,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <p style="font-size:20px;color:#8b949e;line-height:1.7;max-width:620px;margin:0 auto 40px">LightView adds AI monitoring and blockchain verification on top of whatever software you already use — without replacing anything.</p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:24px">
       <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:10px;padding:16px 32px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(88,166,255,0.25)">See Live Demo →</button>
-      <button onclick="document.getElementById('lv-contact').scrollIntoView({behavior:'smooth'})" style="background:transparent;border:1px solid #30363d;color:#e6edf3;border-radius:10px;padding:16px 32px;font-size:20px;font-weight:700;cursor:pointer">Request a Demo</button>
     </div>
     <div style="color:#656d76;font-size:18px">3 live demo companies • No signup required • See real data updates</div>
   </div>
@@ -369,26 +368,6 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div>
         <div style="font-size:24px;font-weight:800;margin-bottom:14px;color:#bc8cff">Why does the blockchain part matter?</div>
         <div style="font-size:18px;color:#8b949e;line-height:1.8">A spreadsheet says whatever you want it to say. An email timestamp can be faked. Even your own internal systems can be edited after the fact — and everyone knows it.<br><br>A blockchain timestamp can't. When LightView writes a record to Lightchain, it's sealed forever. <strong style="color:#e6edf3">If your cooler failed at 12:03 PM, that record exists permanently — you didn't decide to write it after the inspector showed up. That's the difference between "we have a record" and "we have proof."</strong></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Request Demo Form -->
-  <div id="lv-contact" style="background:#13181f;border-top:1px solid #21262d;padding:64px 40px">
-    <div style="max-width:580px;margin:0 auto;text-align:center">
-      <div style="font-size:34px;font-weight:900;margin-bottom:14px">Request a Demo</div>
-      <div style="font-size:18px;color:#8b949e;margin-bottom:36px;line-height:1.6">Tell us about your business and we'll set up a personalized walkthrough tailored to your industry.</div>
-      <div id="lv-form">
-        <input id="lv-company" type="text" placeholder="Company name" maxlength="200" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:14px;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"/>
-        <input id="lv-industry" type="text" placeholder="Industry (e.g. Manufacturing, Healthcare, Restaurant)" maxlength="100" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:14px;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"/>
-        <textarea id="lv-usecase" placeholder="What are you trying to monitor or track? (optional)" rows="4" maxlength="500" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:20px;box-sizing:border-box;resize:vertical;font-family:inherit;line-height:1.5" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"></textarea>
-        <button onclick="requestDemo()" style="width:100%;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:10px;padding:16px;font-size:20px;font-weight:700;cursor:pointer">Send Request →</button>
-      </div>
-      <div id="lv-success" style="display:none;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:12px;padding:32px">
-        <div style="font-size:34px;margin-bottom:12px">✅</div>
-        <div style="font-size:20px;font-weight:700;margin-bottom:10px;color:#3fb950">Request received!</div>
-        <div style="font-size:18px;color:#8b949e;margin-bottom:20px;line-height:1.6">We'll be in touch to schedule your personalized demo.</div>
-        <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:18px;font-weight:700;cursor:pointer">Explore the demo now →</button>
       </div>
     </div>
   </div>
@@ -1694,26 +1673,6 @@ function enterDemo() {
   landing.style.transition = 'opacity 0.4s ease';
   landing.style.opacity = '0';
   setTimeout(() => { landing.remove(); }, 420);
-}
-
-function requestDemo() {
-  const company = (document.getElementById('lv-company').value || '').trim();
-  if (!company) {
-    const inp = document.getElementById('lv-company');
-    inp.style.borderColor = '#f85149';
-    inp.focus();
-    setTimeout(() => { inp.style.borderColor = '#30363d'; }, 2000);
-    return;
-  }
-  const industry = (document.getElementById('lv-industry').value || '').trim();
-  const useCase  = (document.getElementById('lv-usecase').value  || '').trim();
-  fetch(BACKEND + '/api/contact', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({company, industry, use_case: useCase})
-  }).catch(() => {});
-  document.getElementById('lv-form').style.display = 'none';
-  document.getElementById('lv-success').style.display = '';
 }
 
 // ===== AIVM DASHBOARD ANALYSIS =====
