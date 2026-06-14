@@ -938,6 +938,25 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- PIN SCREEN -->
+<div id="pin-screen" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.97);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:0">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:48px 40px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
+    <div style="font-size:32px;margin-bottom:10px">🔒</div>
+    <h2 style="color:#e6edf3;font-size:24px;font-weight:700;margin:0 0 8px">LightView</h2>
+    <p style="color:#8b949e;font-size:18px;margin:0 0 28px">Enter your PIN to continue</p>
+    <input id="pin-input" type="password" inputmode="numeric" maxlength="8"
+      placeholder="PIN"
+      style="width:100%;box-sizing:border-box;background:#0d1117;border:2px solid #30363d;border-radius:8px;color:#e6edf3;font-size:24px;padding:14px 16px;text-align:center;letter-spacing:6px;outline:none;margin-bottom:12px"
+      onkeydown="if(event.key==='Enter')submitPin()"
+      oninput="document.getElementById('pin-error').style.display='none'">
+    <div id="pin-error" style="display:none;color:#f85149;font-size:18px;margin-bottom:12px">Incorrect PIN. Try again.</div>
+    <button onclick="submitPin()"
+      style="width:100%;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:14px;font-size:18px;font-weight:700;cursor:pointer">
+      Enter →
+    </button>
+  </div>
+</div>
+
 <script>
 // ===== BACKEND =====
 const BACKEND = 'https://web-production-c7177.up.railway.app';
@@ -1669,10 +1688,55 @@ function updateQBPanel() {
 
 // ===== LANDING =====
 function enterDemo() {
+  // Check if already authenticated this session
+  if (sessionStorage.getItem('lv_auth') === '1') {
+    _dismissLanding();
+    return;
+  }
+  // Show PIN screen
+  const ps = document.getElementById('pin-screen');
+  ps.style.display = 'flex';
+  setTimeout(() => document.getElementById('pin-input').focus(), 50);
+}
+
+function _dismissLanding() {
   const landing = document.getElementById('landing');
   landing.style.transition = 'opacity 0.4s ease';
   landing.style.opacity = '0';
   setTimeout(() => { landing.remove(); }, 420);
+}
+
+async function submitPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (!pin) return;
+  const btn = document.querySelector('#pin-screen button');
+  btn.textContent = 'Checking...';
+  btn.disabled = true;
+  try {
+    const res = await fetch(BACKEND + '/api/auth', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({pin})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      sessionStorage.setItem('lv_auth', '1');
+      const ps = document.getElementById('pin-screen');
+      ps.style.transition = 'opacity 0.3s ease';
+      ps.style.opacity = '0';
+      setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
+      _dismissLanding();
+    } else {
+      document.getElementById('pin-error').style.display = 'block';
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-input').focus();
+    }
+  } catch(e) {
+    document.getElementById('pin-error').textContent = 'Connection error. Try again.';
+    document.getElementById('pin-error').style.display = 'block';
+  }
+  btn.textContent = 'Enter →';
+  btn.disabled = false;
 }
 
 // ===== AIVM DASHBOARD ANALYSIS =====
