@@ -941,26 +941,37 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <!-- Import Panel -->
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px">
         <div style="font-size:20px;font-weight:600;color:var(--text1);margin-bottom:10px">📥 Import Spreadsheet</div>
-        <div style="font-size:18px;color:var(--text2);margin-bottom:12px">Upload your existing order spreadsheet (.csv or .xlsx) — AIVM will read it and pull out every order automatically.</div>
+        <div style="font-size:18px;color:var(--text2);margin-bottom:12px">Upload your existing order spreadsheet (.csv or .xlsx). You'll tell us which column is which — works with any spreadsheet format.</div>
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
           <label style="cursor:pointer;background:var(--accent);color:#fff;padding:10px 20px;border-radius:6px;font-size:18px;font-weight:600">
             Choose File
             <input type="file" id="gbFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this)">
           </label>
           <span id="gbFileName" style="font-size:18px;color:var(--text2)">No file chosen</span>
-          <button class="btn" id="gbImportBtn" onclick="importSpreadsheet()" style="display:none;font-size:18px;padding:10px 20px">Analyze with AIVM →</button>
+          <button class="btn" id="gbImportBtn" onclick="importSpreadsheetStep1()" style="display:none;font-size:18px;padding:10px 20px">Read Columns →</button>
         </div>
         <div id="gbImportStatus" style="margin-top:10px;font-size:18px;color:var(--text2);display:none"></div>
 
-        <!-- Preview table for imported orders -->
+        <!-- Step 1: Column mapping UI -->
+        <div id="gbColMapPanel" style="display:none;margin-top:16px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:18px">
+          <div style="font-size:19px;font-weight:600;color:var(--text1);margin-bottom:6px">📋 Match Your Columns</div>
+          <div style="font-size:17px;color:var(--text2);margin-bottom:14px">Tell us what each column in your spreadsheet means. Skip any that don't apply.</div>
+          <div id="gbColMapRows" style="display:grid;grid-template-columns:1fr 40px 1fr;gap:8px;align-items:center"></div>
+          <div style="margin-top:16px;display:flex;gap:12px">
+            <button class="btn" onclick="importSpreadsheetStep2()" style="font-size:18px;padding:10px 24px;background:var(--accent)">Import with This Mapping →</button>
+            <button onclick="gbResetImport()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Preview table for imported orders -->
         <div id="gbImportPreview" style="display:none;margin-top:14px">
           <div style="font-size:19px;font-weight:600;color:var(--text1);margin-bottom:8px" id="gbPreviewTitle"></div>
           <div style="overflow-x:auto">
             <table id="gbPreviewTable" style="width:100%;border-collapse:collapse;font-size:17px"></table>
           </div>
           <div style="margin-top:12px;display:flex;gap:12px">
-            <button class="btn" id="gbSaveImportBtn" onclick="saveImportedOrders()" style="font-size:18px;padding:10px 22px;background:var(--green)">✅ Save All to System</button>
-            <button onclick="document.getElementById('gbImportPreview').style.display='none'" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
+            <button class="btn" id="gbSaveImportBtn" onclick="saveImportedOrders()" style="font-size:18px;padding:10px 22px;background:var(--green)">✅ Add All Orders to LightView</button>
+            <button onclick="gbResetImport()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
           </div>
         </div>
       </div>
@@ -1265,6 +1276,7 @@ const BACKEND = 'https://web-production-c7177.up.railway.app';
 // GB state
 let _gbOrders = [];
 let _gbPendingImport = [];
+let _gbPreviewFile   = null;
 let _onboardMsgs = [];
 window._bizProfile = null;
 const _GB_EMPLOYEES = ['David'];
@@ -2331,49 +2343,191 @@ function handleFileSelect(input) {
   document.getElementById('gbImportBtn').style.display = input.files[0] ? '' : 'none';
   document.getElementById('gbImportPreview').style.display = 'none';
   document.getElementById('gbImportStatus').style.display = 'none';
+  document.getElementById('gbColMapPanel').style.display = 'none';
+  _gbPreviewFile = null;
 }
 
-function importSpreadsheet() {
+// ── Column mapping field labels shown in dropdowns ──────────────────────────
+const GB_FIELD_LABELS = {
+  '':                '— Skip this column —',
+  'customer_name':   'Customer Name',
+  'phone':           'Phone Number',
+  'items':           'Item / Description',
+  'manufacturer':    'Manufacturer / Brand',
+  'total_amount':    'Total Price ($)',
+  'deposit_paid':    'Deposit Paid ($)',
+  'expected_date':   'Expected Date',
+  'status':          'Status / Stage',
+  'notes':           'Notes / Comments',
+};
+
+// Keywords that auto-select each field
+const GB_AUTO_MAP = {
+  customer_name: ['customer','customer name','name','client','buyer','bill to','sold to','tagged','tag','tagged as','customer tag','warehouse tag'],
+  phone:         ['phone','telephone','cell','mobile','contact','phone number'],
+  items:         ['items','item','description','product','furniture','order','goods','merchandise','desc','part description','partnumber','part number','part #','part#','sku','model','finish','finish/fabric','fabric'],
+  manufacturer:  ['manufacturer','vendor','supplier','brand','maker','mfg','source'],
+  total_amount:  ['total','total amount','price','amount','sale','invoice','cost','balance','unit cost','retail','retail price'],
+  deposit_paid:  ['deposit','deposit paid','paid','down payment','down','payment'],
+  expected_date: ['expected','expected date','eta','due date','delivery date','arrival','ship date','date out','out date','date sold','ship','delivery'],
+  status:        ['status','order status','stage','state','location','loc'],
+  notes:         ['notes','note','comments','comment','remarks','memo','details','po#','po #','purchase order','po number','verified','intl','initials','approved by'],
+};
+
+function _gbGuessField(header) {
+  const h = header.toLowerCase().trim();
+  for (const [field, aliases] of Object.entries(GB_AUTO_MAP)) {
+    if (aliases.includes(h)) return field;
+  }
+  return '';
+}
+
+// Step 1 — read column names from file, show mapping UI
+function importSpreadsheetStep1() {
   const input = document.getElementById('gbFileInput');
   if (!input.files[0]) return;
+  _gbPreviewFile = input.files[0];
   const statusEl = document.getElementById('gbImportStatus');
   const btn      = document.getElementById('gbImportBtn');
   statusEl.style.display = '';
-  statusEl.textContent   = '⏳ Sending to AIVM — this may take 30–60 seconds…';
+  statusEl.textContent   = '⏳ Reading column names…';
   btn.disabled = true;
+  document.getElementById('gbColMapPanel').style.display = 'none';
+  document.getElementById('gbImportPreview').style.display = 'none';
 
   const fd = new FormData();
   fd.append('file', input.files[0]);
 
-  fetch(BACKEND + '/api/gb/import', { method:'POST', body: fd })
+  fetch(BACKEND + '/api/gb/import-preview', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
+      if (data.error) { statusEl.textContent = '❌ ' + data.error; return; }
+      statusEl.style.display = 'none';
+
+      // Build the mapping grid
+      const headers = data.headers || [];
+      const rowsEl  = document.getElementById('gbColMapRows');
+      rowsEl.innerHTML = '';
+
+      // Column header labels row
+      const mkLabel = (txt) => {
+        const d = document.createElement('div');
+        d.style.cssText = 'font-size:16px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px';
+        d.textContent = txt;
+        return d;
+      };
+      rowsEl.appendChild(mkLabel('Your Column'));
+      rowsEl.appendChild(document.createElement('div'));
+      rowsEl.appendChild(mkLabel('Means…'));
+
+      headers.forEach(h => {
+        // Left: column name box
+        const left = document.createElement('div');
+        left.style.cssText = 'background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-size:18px;color:var(--text1);word-break:break-all';
+        left.textContent = h;
+
+        // Center: arrow
+        const mid = document.createElement('div');
+        mid.style.cssText = 'text-align:center;font-size:20px;color:var(--text3)';
+        mid.textContent = '→';
+
+        // Right: dropdown
+        const sel = document.createElement('select');
+        sel.dataset.col = h;
+        sel.style.cssText = 'width:100%;background:var(--card);border:1px solid var(--border2);color:var(--text1);padding:8px 12px;border-radius:6px;font-size:18px;cursor:pointer;outline:none';
+        Object.entries(GB_FIELD_LABELS).forEach(([val, label]) => {
+          const opt = document.createElement('option');
+          opt.value = val; opt.textContent = label;
+          sel.appendChild(opt);
+        });
+        // Auto-guess based on column header name
+        const guess = _gbGuessField(h);
+        if (guess) sel.value = guess;
+
+        rowsEl.appendChild(left);
+        rowsEl.appendChild(mid);
+        rowsEl.appendChild(sel);
+      });
+
+      document.getElementById('gbColMapPanel').style.display = '';
+    })
+    .catch(err => {
+      btn.disabled = false;
+      statusEl.textContent = '❌ Could not read file: ' + err.message;
+    });
+}
+
+// Step 2 — user confirmed mapping, run the full import
+function importSpreadsheetStep2() {
+  if (!_gbPreviewFile) return;
+
+  // Read all dropdowns → build column_map  {fieldName: "SpreadsheetColumnName"}
+  const selects    = document.querySelectorAll('#gbColMapRows select');
+  const colMap     = {};
+  const usedFields = new Set();
+  selects.forEach(sel => {
+    if (sel.value && !usedFields.has(sel.value)) {
+      colMap[sel.value] = sel.dataset.col;
+      usedFields.add(sel.value);
+    }
+  });
+
+  if (!colMap.customer_name) {
+    toast('Please choose which column contains the Customer Name before importing.');
+    return;
+  }
+
+  const statusEl = document.getElementById('gbImportStatus');
+  statusEl.style.display = '';
+  statusEl.textContent   = '⏳ Importing orders — please wait…';
+  document.getElementById('gbImportPreview').style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('file', _gbPreviewFile);
+  fd.append('column_map', JSON.stringify(colMap));
+
+  fetch(BACKEND + '/api/gb/import', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
       if (data.error && (!data.orders || data.orders.length === 0)) {
-        statusEl.textContent = '❌ ' + data.error;
-        return;
+        statusEl.textContent = '❌ ' + data.error; return;
       }
       _gbPendingImport = data.orders || [];
-      statusEl.textContent = `✅ AIVM found ${_gbPendingImport.length} order(s) in ${data.rows_scanned} rows (${data.source})`;
+      statusEl.textContent = `✅ Found ${_gbPendingImport.length.toLocaleString()} orders in ${(data.rows_scanned||0).toLocaleString()} rows`;
+      document.getElementById('gbColMapPanel').style.display = 'none';
 
-      // Show preview table
-      const preview = document.getElementById('gbImportPreview');
-      document.getElementById('gbPreviewTitle').textContent = `Preview — ${_gbPendingImport.length} orders found`;
-      const tbl = document.getElementById('gbPreviewTable');
+      // Preview table (show first 50 rows + "… and X more")
+      document.getElementById('gbPreviewTitle').textContent = `Preview — ${_gbPendingImport.length.toLocaleString()} orders found`;
+      const tbl  = document.getElementById('gbPreviewTable');
       const cols = ['customer_name','items','manufacturer','total_amount','deposit_paid','expected_date','status'];
       const hdrs = ['Customer','Items','Manufacturer','Total','Deposit','Expected','Status'];
       tbl.innerHTML = `<tr style="background:var(--bg3)">${hdrs.map(h=>`<th style="padding:8px 12px;text-align:left;font-size:16px;font-weight:600;color:var(--text2)">${h}</th>`).join('')}</tr>`
-        + _gbPendingImport.map(o => `<tr style="border-top:1px solid var(--border)">${cols.map(c => {
+        + _gbPendingImport.slice(0, 50).map(o => `<tr style="border-top:1px solid var(--border)">${cols.map(c => {
             let v = o[c] || '';
             if (Array.isArray(v)) v = v.join(', ');
             return `<td style="padding:8px 12px;font-size:16px;color:var(--text1);max-width:160px;word-break:break-word">${String(v).slice(0,80)}</td>`;
           }).join('')}</tr>`).join('');
-      preview.style.display = '';
+      if (_gbPendingImport.length > 50) {
+        tbl.innerHTML += `<tr><td colspan="7" style="padding:10px 12px;font-size:16px;color:var(--text2);text-align:center">… and ${(_gbPendingImport.length - 50).toLocaleString()} more orders</td></tr>`;
+      }
+      const saveBtn = document.getElementById('gbSaveImportBtn');
+      saveBtn.textContent = `✅ Add All ${_gbPendingImport.length.toLocaleString()} Orders to LightView`;
+      document.getElementById('gbImportPreview').style.display = '';
     })
-    .catch(err => {
-      btn.disabled = false;
-      statusEl.textContent = '❌ Import failed: ' + err.message;
-    });
+    .catch(err => { statusEl.textContent = '❌ Import failed: ' + err.message; });
+}
+
+function gbResetImport() {
+  _gbPreviewFile = null;
+  _gbPendingImport = [];
+  const fi = document.getElementById('gbFileInput');
+  try { fi.value = ''; } catch(e) {}
+  document.getElementById('gbFileName').textContent = 'No file chosen';
+  document.getElementById('gbImportBtn').style.display = 'none';
+  document.getElementById('gbImportStatus').style.display = 'none';
+  document.getElementById('gbColMapPanel').style.display = 'none';
+  document.getElementById('gbImportPreview').style.display = 'none';
 }
 
 function saveImportedOrders() {
@@ -2397,7 +2551,7 @@ function saveImportedOrders() {
       loadOrders();
     } else {
       btn.disabled = false;
-      btn.textContent = '✅ Save All to System';
+      btn.textContent = '✅ Add All Orders to LightView';
       toast('Save failed: ' + (data.error || 'unknown error'));
     }
   })
