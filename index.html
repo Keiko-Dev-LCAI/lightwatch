@@ -276,6 +276,28 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .gb-inv-filter{background:var(--card);border:1px solid var(--border2);color:var(--text2);padding:6px 14px;border-radius:20px;font-size:18px;cursor:pointer;transition:all .2s}
 .gb-inv-filter.active{background:var(--blue);border-color:var(--blue);color:#fff}
 
+/* GB ASK AIVM CHAT */
+.gb-chat-wrap{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;height:520px}
+.gb-chat-msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+.gb-chat-row-user{display:flex;justify-content:flex-end}
+.gb-chat-row-ai{display:flex;justify-content:flex-start}
+.gb-chat-bubble{max-width:78%;padding:12px 16px;border-radius:14px;font-size:18px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
+.gb-chat-bubble-user{background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border-bottom-right-radius:4px}
+.gb-chat-bubble-ai{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border2);border-bottom-left-radius:4px}
+.gb-chat-bubble-ai.thinking{color:var(--text2);font-style:italic}
+.gb-chat-input-row{padding:14px;border-top:1px solid var(--border);display:flex;gap:10px;align-items:flex-end;background:var(--card)}
+.gb-chat-input{flex:1;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px;resize:none;font-family:inherit;line-height:1.5;outline:none;min-height:44px;max-height:120px}
+.gb-chat-input:focus{border-color:var(--blue)}
+.gb-chat-send{background:var(--blue);color:#000;border:none;border-radius:8px;padding:10px 20px;font-size:18px;font-weight:700;cursor:pointer;white-space:nowrap;height:44px}
+.gb-chat-send:hover{background:#79b8ff}
+.gb-chat-send:disabled{background:var(--border2);cursor:default}
+.gb-quick-chip{background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text2);padding:7px 14px;border-radius:20px;font-size:17px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.gb-quick-chip:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+.gb-attach-chip{display:inline-flex;align-items:center;gap:8px;background:var(--blue-bg);border:1px solid rgba(88,166,255,.3);color:var(--blue);padding:6px 12px;border-radius:20px;font-size:17px;margin-bottom:10px}
+.gb-attach-chip button{background:none;border:none;color:var(--blue);cursor:pointer;font-size:16px;padding:0;line-height:1}
+.gb-scan-btn{background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.4);color:var(--blue);padding:8px 16px;border-radius:8px;font-size:17px;cursor:pointer;font-weight:600;white-space:nowrap;transition:all .15s}
+.gb-scan-btn:hover{background:var(--blue-bg);border-color:var(--blue)}
+
 /* MOBILE RESPONSIVE */
 .hamburger{display:none;background:none;border:none;color:var(--text);font-size:28px;cursor:pointer;padding:4px 8px;line-height:1;flex-shrink:0}
 .sidebar-backdrop{display:none;position:fixed;inset:0;top:64px;background:rgba(0,0,0,.55);z-index:99}
@@ -931,13 +953,18 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="section" id="section-orders">
       <div class="sec-header">
         <h2 class="sec-title">🛋️ Great Bridge Furniture — Orders</h2>
-        <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label class="gb-scan-btn" for="gbScanInput">📷 Scan Ticket</label>
+          <input type="file" id="gbScanInput" accept="image/*,.pdf" style="display:none" onchange="gbScanTicket(this)">
+          <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
+        </div>
       </div>
 
       <!-- GB Sub-Navigation Tabs -->
       <div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px">
         <button class="gb-nav-tab active" onclick="gbShowTab('orders')" id="gbTab-orders">📋 Orders</button>
         <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory">📦 Inventory</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('aivm')" id="gbTab-aivm">🤖 Ask AIVM</button>
       </div>
 
       <!-- Orders sub-section -->
@@ -1099,6 +1126,42 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div id="gbInvCount" style="margin-top:10px;font-size:18px;color:var(--text2)"></div>
       </div>
+
+      <!-- ── ASK AIVM CHAT ──────────────────────────────────────────────────── -->
+      <div id="gbSection-aivm" class="gb-tab-section" style="display:none;margin-top:4px">
+
+        <!-- Quick prompts + clear -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="gb-quick-chip" onclick="gbAskQuick('Who owes me money?')">💰 Who owes me money?</button>
+            <button class="gb-quick-chip" onclick="gbAskQuick('What orders are overdue?')">⚠️ What orders are overdue?</button>
+            <button class="gb-quick-chip" onclick="gbAskQuick('What\'s arriving this week?')">📦 What's arriving this week?</button>
+          </div>
+          <a href="#" onclick="gbAskClearChat();return false;" style="color:var(--text3);font-size:17px;text-decoration:none;white-space:nowrap">Clear chat</a>
+        </div>
+
+        <!-- File attachment display -->
+        <div id="gbAskAttachDisplay" style="display:none;margin-bottom:10px"></div>
+
+        <!-- Chat window -->
+        <div class="gb-chat-wrap">
+          <div class="gb-chat-msgs" id="gbAskMsgs">
+            <div class="gb-chat-row-ai">
+              <div class="gb-chat-bubble gb-chat-bubble-ai">👋 Hi David! I'm your AIVM business assistant. I have live access to your orders, inventory, and activity log. Ask me anything — like "who owes me money?", "what's overdue?", or "how many orders came in this month?"</div>
+            </div>
+          </div>
+          <div class="gb-chat-input-row">
+            <label for="gbAskFileInput" title="Attach image or spreadsheet" style="cursor:pointer;padding:8px 12px;background:rgba(255,255,255,.06);border:1px solid var(--border2);border-radius:8px;font-size:18px;height:44px;display:flex;align-items:center;flex-shrink:0">📎</label>
+            <input type="file" id="gbAskFileInput" accept="image/jpeg,image/png,image/webp,image/heic,.xlsx,.csv" style="display:none" onchange="gbAskAttachFile(this)">
+            <textarea class="gb-chat-input" id="gbAskInput" placeholder="Ask anything about your business…" rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();gbAskSend()}"
+              oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+            <button class="gb-chat-send" id="gbAskSendBtn" onclick="gbAskSend()">Send →</button>
+          </div>
+        </div>
+
+      </div><!-- end #gbSection-aivm -->
+
     </div>
 
     <!-- ═══ GREAT BRIDGE FURNITURE — CALENDAR ═══ -->
@@ -1333,6 +1396,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <button onclick="gbCloseInvModal()" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);padding:10px 20px;border-radius:8px;font-size:18px;cursor:pointer">Cancel</button>
       <button onclick="gbSaveInventoryItem()" style="background:var(--green);color:#000;border:none;border-radius:8px;padding:10px 24px;font-size:18px;font-weight:700;cursor:pointer">Save Item</button>
     </div>
+  </div>
+</div>
+
+<!-- SCAN TICKET OVERLAY -->
+<div id="gbScanOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9998;align-items:center;justify-content:center;flex-direction:column;gap:18px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:36px 40px;text-align:center;max-width:360px">
+    <div style="width:44px;height:44px;border:3px solid rgba(88,166,255,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 18px"></div>
+    <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">📷 Reading your ticket…</div>
+    <div style="font-size:17px;color:var(--text2)">AIVM is extracting order details</div>
   </div>
 </div>
 
@@ -2412,7 +2484,9 @@ function renderOrderTable() {
       <td style="padding:12px 14px">
         <button class="gb-docs-btn" id="gbdocsbtn-${o.id}" onclick="gbToggleDocs(${o.id})">📎 Docs</button>
       </td>
-      <td style="padding:12px 14px">
+      <td style="padding:12px 14px;white-space:nowrap">
+        <button onclick="gbOpenProposal(${o.id})" title="Generate Proposal"
+          style="background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">📄</button>
         <button onclick="deleteOrder(${o.id}, '${(o.customer_name||'').replace(/'/g,"\\'")}')"
           style="background:rgba(248,81,73,0.1);color:var(--red);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer">🗑️</button>
       </td>
@@ -4322,13 +4396,11 @@ async function _startOnboarding() {
 
 // ── GB Sub-tab navigation ─────────────────────────────────────────────────────
 function gbShowTab(tab) {
-  ['orders','inventory'].forEach(t => {
+  ['orders','inventory','aivm'].forEach(t => {
     const sec = document.getElementById('gbSection-' + t);
     const btn = document.getElementById('gbTab-' + t);
     if (sec) sec.style.display = (t === tab) ? '' : 'none';
-    if (btn) {
-      btn.classList.toggle('active', t === tab);
-    }
+    if (btn) btn.classList.toggle('active', t === tab);
   });
   if (tab === 'inventory') gbLoadInventory();
 }
@@ -4574,6 +4646,194 @@ async function _bizReconfigure() {
   _startOnboarding();
 }
 
+
+// ===== ASK AIVM CHAT =====
+let _gbAskMsgs = [];        // conversation history for this session
+let _gbAskFile = null;      // { name, b64, mime }
+let _gbAskBusy = false;
+
+function gbAskAppendMsg(role, text) {
+  const container = document.getElementById('gbAskMsgs');
+  if (!container) return;
+  const row = document.createElement('div');
+  row.className = role === 'user' ? 'gb-chat-row-user' : 'gb-chat-row-ai';
+  const bubble = document.createElement('div');
+  bubble.className = 'gb-chat-bubble ' + (role === 'user' ? 'gb-chat-bubble-user' : 'gb-chat-bubble-ai');
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  container.appendChild(row);
+  container.scrollTop = container.scrollHeight;
+  return bubble;
+}
+
+function gbAskClearChat() {
+  _gbAskMsgs = [];
+  _gbAskFile = null;
+  const container = document.getElementById('gbAskMsgs');
+  if (container) {
+    container.innerHTML = '';
+    gbAskAppendMsg('assistant', '👋 Chat cleared. Ask me anything about your business!');
+  }
+  _gbAskUpdateAttachDisplay();
+}
+
+function gbAskAttachFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { toast('File too large — max 10MB'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const b64 = e.target.result.split(',')[1];
+    _gbAskFile = { name: file.name, b64, mime: file.type || 'application/octet-stream' };
+    _gbAskUpdateAttachDisplay();
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function _gbAskUpdateAttachDisplay() {
+  const el = document.getElementById('gbAskAttachDisplay');
+  if (!el) return;
+  if (_gbAskFile) {
+    el.style.display = '';
+    el.innerHTML = `<div class="gb-attach-chip"><span>📎 ${_gbAskFile.name}</span><button onclick="_gbAskRemoveFile()" title="Remove">✕</button></div>`;
+  } else {
+    el.style.display = 'none';
+    el.innerHTML = '';
+  }
+}
+
+function _gbAskRemoveFile() {
+  _gbAskFile = null;
+  _gbAskUpdateAttachDisplay();
+}
+
+async function gbAskSend() {
+  if (_gbAskBusy) return;
+  const input = document.getElementById('gbAskInput');
+  const msg = (input.value || '').trim();
+  if (!msg) return;
+
+  input.value = '';
+  input.style.height = '44px';
+  _gbAskBusy = true;
+  document.getElementById('gbAskSendBtn').disabled = true;
+
+  gbAskAppendMsg('user', msg + (_gbAskFile ? '\n📎 ' + _gbAskFile.name : ''));
+  _gbAskMsgs.push({ role: 'user', content: msg });
+  _gbAskUpdateAttachDisplay();
+
+  // Thinking bubble
+  const thinkBubble = gbAskAppendMsg('assistant', '⏳ Thinking…');
+  if (thinkBubble) thinkBubble.classList.add('thinking');
+
+  const body = {
+    message: msg,
+    messages: _gbAskMsgs.slice(-10),
+  };
+  if (_gbAskFile) {
+    body.file_b64  = _gbAskFile.b64;
+    body.file_mime = _gbAskFile.mime;
+    body.file_name = _gbAskFile.name;
+  }
+  _gbAskFile = null;
+
+  try {
+    const res = await fetch(BACKEND + '/api/gb/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    const reply = data.reply || 'Sorry, I could not get a response.';
+    if (thinkBubble) thinkBubble.closest('.gb-chat-row-ai')?.remove();
+    gbAskAppendMsg('assistant', reply);
+    _gbAskMsgs.push({ role: 'assistant', content: reply });
+  } catch (e) {
+    if (thinkBubble) thinkBubble.closest('.gb-chat-row-ai')?.remove();
+    gbAskAppendMsg('assistant', '⚠️ Couldn\'t connect to the server. Check your connection and try again.');
+  }
+
+  _gbAskBusy = false;
+  document.getElementById('gbAskSendBtn').disabled = false;
+  const msgs = document.getElementById('gbAskMsgs');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+function gbAskQuick(prompt) {
+  const input = document.getElementById('gbAskInput');
+  if (input) {
+    input.value = prompt;
+    gbShowTab('aivm');
+  }
+  gbAskSend();
+}
+
+// ===== SCAN TICKET =====
+
+async function gbScanTicket(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const overlay = document.getElementById('gbScanOverlay');
+  overlay.style.display = 'flex';
+
+  try {
+    const fd = new FormData();
+    fd.append('image', file);
+
+    const res = await fetch(BACKEND + '/api/gb/scan-ticket', { method: 'POST', body: fd });
+    const data = await res.json();
+
+    overlay.style.display = 'none';
+
+    if (data.error || !data.fields) {
+      toast("Couldn't read the ticket automatically. The New Order form is open — fill it in manually.");
+      showAddOrderModal();
+      return;
+    }
+
+    gbFillOrderModal(data.fields);
+    toast('✅ Ticket scanned — review the details and save!');
+
+  } catch (e) {
+    overlay.style.display = 'none';
+    toast("Couldn't read the ticket automatically. The New Order form is open — fill it in manually.");
+    showAddOrderModal();
+  }
+}
+
+function gbFillOrderModal(fields) {
+  // Pre-fill order modal with extracted fields, then open it
+  showAddOrderModal();  // clears and opens modal
+
+  if (fields.customer_name) document.getElementById('mo-name').value  = fields.customer_name;
+  if (fields.phone)         document.getElementById('mo-phone').value = fields.phone;
+  if (fields.items)         document.getElementById('mo-items').value = Array.isArray(fields.items) ? fields.items.join('\n') : fields.items;
+  if (fields.manufacturer)  document.getElementById('mo-mfr').value   = fields.manufacturer;
+  if (fields.total_price)   document.getElementById('mo-total').value  = parseFloat(String(fields.total_price).replace(/[^0-9.]/g,'')) || '';
+  if (fields.deposit_paid)  document.getElementById('mo-deposit').value= parseFloat(String(fields.deposit_paid).replace(/[^0-9.]/g,'')) || '';
+  if (fields.expected_date) {
+    // Try to parse various date formats
+    try {
+      const d = new Date(fields.expected_date);
+      if (!isNaN(d)) document.getElementById('mo-date').value = d.toISOString().slice(0,10);
+    } catch(e) {}
+  }
+  if (fields.status) {
+    const validStatuses = ['Ordered','In Transit','Received','Ready for Pickup','Delivered','Paid'];
+    const matched = validStatuses.find(s => s.toLowerCase() === (fields.status||'').toLowerCase());
+    if (matched) document.getElementById('mo-status').value = matched;
+  }
+  if (fields.notes) document.getElementById('mo-notes').value = fields.notes;
+}
+
+// ===== PROPOSAL =====
+
+function gbOpenProposal(orderId) {
+  window.open(BACKEND + '/api/gb/proposal/' + orderId, '_blank');
+}
 
 // ===== INIT =====
 renderAll();
