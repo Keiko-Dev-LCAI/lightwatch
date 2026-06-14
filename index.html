@@ -852,7 +852,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <button class="btn btn-blue" id="gbAnalyzeBtn" onclick="gbAnalyzeSheets()" style="display:none;font-size:18px;padding:10px 20px">🔍 Analyze with AIVM</button>
-          <button class="btn" id="gbRestructureBtn" onclick="gbRestructureSheets()" style="display:none;font-size:18px;padding:10px 20px;background:var(--green);color:#000">⬇️ Generate Clean Spreadsheet</button>
+          <button class="btn" id="gbRestructureBtn" onclick="gbRestructureSheets('xlsx')" style="display:none;font-size:18px;padding:10px 20px;background:var(--green);color:#000">⬇️ Generate Clean Spreadsheet</button>
+          <button class="btn" id="gbCsvBtn" onclick="gbRestructureSheets('csv')" style="display:none;font-size:18px;padding:10px 20px;background:#3a6bc9;color:#fff">📋 Download as CSV</button>
         </div>
         <div id="gbSheetsStatus" style="margin-top:10px;font-size:18px;color:var(--text2);display:none"></div>
         <div id="gbSheetsAnalysis" class="gb-sheet-analysis"></div>
@@ -2211,8 +2212,9 @@ function handleSheetsSelect(input) {
   const count = input.files.length;
   document.getElementById('gbSheetsLabel').textContent =
     count === 0 ? 'No files chosen' : count + ' file' + (count > 1 ? 's' : '') + ' selected';
-  document.getElementById('gbAnalyzeBtn').style.display   = count > 0 ? '' : 'none';
+  document.getElementById('gbAnalyzeBtn').style.display    = count > 0 ? '' : 'none';
   document.getElementById('gbRestructureBtn').style.display = count > 0 ? '' : 'none';
+  document.getElementById('gbCsvBtn').style.display         = count > 0 ? '' : 'none';
   document.getElementById('gbSheetsAnalysis').style.display = 'none';
   document.getElementById('gbSheetsStatus').style.display   = 'none';
 }
@@ -2257,15 +2259,22 @@ function gbAnalyzeSheets() {
     });
 }
 
-function gbRestructureSheets() {
+function gbRestructureSheets(format) {
   if (!_gbSheetFiles || _gbSheetFiles.length === 0) { toast('Select files first'); return; }
+  format = format || 'xlsx';
 
-  const statusEl      = document.getElementById('gbSheetsStatus');
+  const statusEl       = document.getElementById('gbSheetsStatus');
   const restructureBtn = document.getElementById('gbRestructureBtn');
+  const csvBtn         = document.getElementById('gbCsvBtn');
+  const isCsv          = (format === 'csv');
+  const defaultName    = isCsv ? 'GB_Unified.csv' : 'GB_Unified.xlsx';
 
   statusEl.style.display = '';
-  statusEl.textContent   = '⏳ Building clean spreadsheet… AIVM is processing your data. This may take 60–120 seconds.';
+  statusEl.textContent   = isCsv
+    ? '⏳ Building CSV file… This may take 60–120 seconds.'
+    : '⏳ Building clean spreadsheet… AIVM is processing your data. This may take 60–120 seconds.';
   restructureBtn.disabled = true;
+  if (csvBtn) csvBtn.disabled = true;
 
   const fd = new FormData();
   for (let i = 0; i < _gbSheetFiles.length; i++) {
@@ -2274,20 +2283,20 @@ function gbRestructureSheets() {
   if (_gbSheetMapping) {
     fd.append('mapping', JSON.stringify(_gbSheetMapping));
   }
+  fd.append('format', format);
 
   fetch(BACKEND + '/api/gb/restructure-sheets', { method: 'POST', body: fd })
     .then(resp => {
       restructureBtn.disabled = false;
+      if (csvBtn) csvBtn.disabled = false;
       if (!resp.ok) {
         return resp.json().then(e => { throw new Error(e.error || resp.status); });
       }
-      // Get filename from Content-Disposition header if available
       const cd       = resp.headers.get('Content-Disposition') || '';
       const fnMatch  = cd.match(/filename="?([^";\n]+)"?/);
-      const filename = fnMatch ? fnMatch[1] : 'GB_Unified.xlsx';
+      const filename = fnMatch ? fnMatch[1] : defaultName;
 
       return resp.blob().then(blob => {
-        // Trigger browser download
         const url = URL.createObjectURL(blob);
         const a   = document.createElement('a');
         a.href     = url;
@@ -2296,12 +2305,13 @@ function gbRestructureSheets() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        statusEl.textContent = '✅ Clean spreadsheet downloaded: ' + filename;
-        toast('📊 ' + filename + ' downloaded!');
+        statusEl.textContent = '✅ Downloaded: ' + filename;
+        toast((isCsv ? '📋 ' : '📊 ') + filename + ' downloaded!');
       });
     })
     .catch(err => {
       restructureBtn.disabled = false;
+      if (csvBtn) csvBtn.disabled = false;
       statusEl.textContent = '❌ Failed: ' + err.message;
     });
 }
