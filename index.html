@@ -578,54 +578,89 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
     <!-- ===== REPORTS ===== -->
     <div class="section" id="section-reports">
-      <div class="sec-header">
-        <h2 class="sec-title">Generate Report</h2>
+      <div class="sec-header" style="flex-wrap:wrap;gap:12px">
+        <h2 class="sec-title" id="reports-title">Generate Report</h2>
+        <button id="gbr-print-btn" onclick="printGBReport()" class="btn btn-out" style="display:none;font-size:17px;padding:8px 16px">🖨️ Print Report</button>
       </div>
 
-      <!-- QuickBooks Connect Panel -->
-      <div class="qb-connect" id="qb-connect-panel">
-        <div>
-          <div class="qb-badge qb-off" id="qb-status-badge">⚡ QuickBooks — Not Connected</div>
-          <div style="color:var(--text2);font-size:18px;margin-top:6px" id="qb-status-sub">Connect your real QuickBooks account to load live financial data into LightView</div>
+      <!-- GB-SPECIFIC REPORTS -->
+      <div id="gb-reports-panel" style="display:none">
+        <div class="report-types" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">
+          <div class="rtype" id="gbrt-sales" onclick="gbReport('sales','month')">
+            <div class="rtype-icon">📊</div>
+            <div class="rtype-title">Sales Summary</div>
+            <div class="rtype-desc">Revenue, order count, and averages by time period</div>
+          </div>
+          <div class="rtype" id="gbrt-delivery" onclick="gbReport('delivery','week')">
+            <div class="rtype-icon">🚚</div>
+            <div class="rtype-title">Delivery Schedule</div>
+            <div class="rtype-desc">Customer deliveries going out by date range</div>
+          </div>
+          <div class="rtype" id="gbrt-status" onclick="gbReport('status','')">
+            <div class="rtype-icon">📦</div>
+            <div class="rtype-title">Order Status</div>
+            <div class="rtype-desc">All orders grouped by current stage</div>
+          </div>
+          <div class="rtype" id="gbrt-arrivals" onclick="gbReport('arrivals','month')">
+            <div class="rtype-icon">🏭</div>
+            <div class="rtype-title">Manufacturer Arrivals</div>
+            <div class="rtype-desc">Incoming orders from manufacturers by date</div>
+          </div>
+          <div class="rtype" id="gbrt-balance" onclick="gbReport('balance','')">
+            <div class="rtype-icon">💰</div>
+            <div class="rtype-title">Outstanding Balances</div>
+            <div class="rtype-desc">Customers with remaining balance due before delivery</div>
+          </div>
         </div>
-        <button class="btn-qb" id="qb-action-btn" onclick="qbConnect()">🔗 Connect QuickBooks</button>
       </div>
 
-      <div class="demo-banner">
-        📋 Same data — different presentation. Choose who's asking and LightView generates the right format.
+      <!-- GENERIC REPORTS (non-GB entities) -->
+      <div id="generic-reports-panel">
+        <!-- QuickBooks Connect Panel -->
+        <div class="qb-connect" id="qb-connect-panel">
+          <div>
+            <div class="qb-badge qb-off" id="qb-status-badge">⚡ QuickBooks — Not Connected</div>
+            <div style="color:var(--text2);font-size:18px;margin-top:6px" id="qb-status-sub">Connect your real QuickBooks account to load live financial data into LightView</div>
+          </div>
+          <button class="btn-qb" id="qb-action-btn" onclick="qbConnect()">🔗 Connect QuickBooks</button>
+        </div>
+        <div class="demo-banner">
+          📋 Same data — different presentation. Choose who's asking and LightView generates the right format.
+        </div>
+        <div class="report-types">
+          <div class="rtype" onclick="selectReport('bank')" id="rtype-bank">
+            <div class="rtype-icon">🏦</div>
+            <div class="rtype-title">Bank / Loan Application</div>
+            <div class="rtype-desc">One-page plain English summary of clean operations and output</div>
+          </div>
+          <div class="rtype" onclick="selectReport('regulator')" id="rtype-regulator">
+            <div class="rtype-icon">🏛️</div>
+            <div class="rtype-title">Regulator / Inspector</div>
+            <div class="rtype-desc">Raw data with timestamps, chain of custody, blockchain verification</div>
+          </div>
+          <div class="rtype" onclick="selectReport('auditor')" id="rtype-auditor">
+            <div class="rtype-icon">📋</div>
+            <div class="rtype-title">Auditor</div>
+            <div class="rtype-desc">What was monitored, flagged, resolved, by whom and when</div>
+          </div>
+          <div class="rtype" onclick="selectReport('exec')" id="rtype-exec">
+            <div class="rtype-icon">👔</div>
+            <div class="rtype-title">Executive Summary</div>
+            <div class="rtype-desc">Plain English — one paragraph, no jargon</div>
+          </div>
+          <div class="rtype" onclick="selectReport('govt')" id="rtype-govt">
+            <div class="rtype-icon">🏗️</div>
+            <div class="rtype-title">Government Contract</div>
+            <div class="rtype-desc">Full compliance documentation package with verified track record</div>
+          </div>
+          <div class="rtype" onclick="selectReport('investor')" id="rtype-investor">
+            <div class="rtype-icon">💼</div>
+            <div class="rtype-title">Investor / Board</div>
+            <div class="rtype-desc">KPI summary with trend analysis and key events</div>
+          </div>
+        </div>
       </div>
-      <div class="report-types">
-        <div class="rtype" onclick="selectReport('bank')" id="rtype-bank">
-          <div class="rtype-icon">🏦</div>
-          <div class="rtype-title">Bank / Loan Application</div>
-          <div class="rtype-desc">One-page plain English summary of clean operations and output</div>
-        </div>
-        <div class="rtype" onclick="selectReport('regulator')" id="rtype-regulator">
-          <div class="rtype-icon">🏛️</div>
-          <div class="rtype-title">Regulator / Inspector</div>
-          <div class="rtype-desc">Raw data with timestamps, chain of custody, blockchain verification</div>
-        </div>
-        <div class="rtype" onclick="selectReport('auditor')" id="rtype-auditor">
-          <div class="rtype-icon">📋</div>
-          <div class="rtype-title">Auditor</div>
-          <div class="rtype-desc">What was monitored, flagged, resolved, by whom and when</div>
-        </div>
-        <div class="rtype" onclick="selectReport('exec')" id="rtype-exec">
-          <div class="rtype-icon">👔</div>
-          <div class="rtype-title">Executive Summary</div>
-          <div class="rtype-desc">Plain English — one paragraph, no jargon</div>
-        </div>
-        <div class="rtype" onclick="selectReport('govt')" id="rtype-govt">
-          <div class="rtype-icon">🏗️</div>
-          <div class="rtype-title">Government Contract</div>
-          <div class="rtype-desc">Full compliance documentation package with verified track record</div>
-        </div>
-        <div class="rtype" onclick="selectReport('investor')" id="rtype-investor">
-          <div class="rtype-icon">💼</div>
-          <div class="rtype-title">Investor / Board</div>
-          <div class="rtype-desc">KPI summary with trend analysis and key events</div>
-        </div>
-      </div>
+
       <div class="report-out" id="reportOutput">
         <div class="report-placeholder">
           <div>📄</div>
@@ -1453,9 +1488,21 @@ function showSection(name) {
   if (name === 'portfolio') renderPortfolio();
   if (name === 'orders') renderOrderTable();
   if (name === 'calendar') loadCalendar();
-  if (name === 'reports') { selectedReport = null; document.querySelectorAll('.rtype').forEach(r=>r.classList.remove('sel')); document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📄</div><div>Select a report type above to generate</div></div>'; }
+  if (name === 'reports') { renderReportSection(); }
   // howto is static — no render needed
   closeSidebar();   // close mobile sidebar when any nav item tapped
+}
+
+function renderReportSection() {
+  selectedReport = null;
+  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
+  document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📄</div><div>Select a report type above to generate</div></div>';
+  const isGB = current === 'gb';
+  document.getElementById('gb-reports-panel').style.display    = isGB ? '' : 'none';
+  document.getElementById('generic-reports-panel').style.display = isGB ? 'none' : '';
+  document.getElementById('gbr-print-btn').style.display       = 'none';
+  document.getElementById('reports-title').textContent         = isGB ? '📋 Great Bridge Furniture Reports' : 'Generate Report';
+  _gbCurrentReport = null;
 }
 
 function acknowledgeAlert(id) {
@@ -2671,6 +2718,303 @@ function closeSidebar() {
   const bd=document.getElementById('sidebarBackdrop');
   if(sb) sb.classList.remove('mob-open');
   if(bd) bd.classList.remove('mob-open');
+}
+
+// ===== GB REPORTS =====
+let _gbCurrentReport = null;
+
+function gbReport(type, period) {
+  period = period || '';
+  if (!_gbOrders || _gbOrders.length === 0) {
+    document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⏳</div><div>Loading order data…</div></div>';
+    fetch(BACKEND + '/api/gb/orders').then(r=>r.json()).then(d=>{_gbOrders=d.orders||[];gbReport(type,period);}).catch(()=>{document.getElementById('reportOutput').innerHTML='<div class="report-placeholder"><div>⚠️</div><div>Could not load orders</div></div>';});
+    return;
+  }
+  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
+  const card = document.getElementById('gbrt-' + type);
+  if (card) card.classList.add('sel');
+  let html = '';
+  if (type === 'sales')    html = _gbrSales(period);
+  if (type === 'delivery') html = _gbrDelivery(period);
+  if (type === 'status')   html = _gbrStatus();
+  if (type === 'arrivals') html = _gbrArrivals(period);
+  if (type === 'balance')  html = _gbrBalance();
+  _gbCurrentReport = { type, period, html };
+  document.getElementById('reportOutput').innerHTML = html;
+  document.getElementById('gbr-print-btn').style.display = '';
+}
+
+// ── helpers ──
+function _gbFmt$(n) { return '$' + parseFloat(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function _gbFmtDate(s) {
+  if (!s) return '—';
+  return new Date(s+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function _gbParseItems(s) {
+  try { const a=JSON.parse(s); return Array.isArray(a)?a.join(', '):s; } catch(e){ return s||'—'; }
+}
+function _gbPeriodStart(period) {
+  const now=new Date();
+  if(period==='week'){const d=new Date(now);d.setDate(d.getDate()-d.getDay());d.setHours(0,0,0,0);return d;}
+  if(period==='nextweek'){const d=new Date(now);d.setDate(d.getDate()-d.getDay()+7);d.setHours(0,0,0,0);return d;}
+  if(period==='month'){return new Date(now.getFullYear(),now.getMonth(),1);}
+  if(period==='lastmonth'){return new Date(now.getFullYear(),now.getMonth()-1,1);}
+  if(period==='7days'){const d=new Date(now);d.setDate(d.getDate()-7);return d;}
+  if(period==='30days'){const d=new Date(now);d.setDate(d.getDate());return d;}
+  return null;
+}
+function _gbPeriodEnd(period) {
+  const now=new Date();
+  if(period==='nextweek'){const d=new Date(now);d.setDate(d.getDate()-d.getDay()+13);d.setHours(23,59,59,999);return d;}
+  if(period==='lastmonth'){return new Date(now.getFullYear(),now.getMonth(),0,23,59,59,999);}
+  if(period==='30days'){const d=new Date(now);d.setDate(d.getDate()+30);return d;}
+  return null;
+}
+function _gbPeriodLabel(p){return{week:'This Week',month:'This Month',lastmonth:'Last Month',all:'All Time','7days':'Last 7 Days','30days':'Next 30 Days',nextweek:'Next Week'}[p]||'All';}
+function _gbInPeriod(dateStr, period) {
+  if(!dateStr) return false;
+  const d=new Date(dateStr+'T12:00:00');
+  const start=_gbPeriodStart(period), end=_gbPeriodEnd(period);
+  if(start && d<start) return false;
+  if(end && d>end) return false;
+  return true;
+}
+function _gbrPeriodBtns(type, cur, periods) {
+  return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">' +
+    periods.map(([v,lbl])=>`<button onclick="gbReport('${type}','${v}')" style="padding:6px 14px;border-radius:20px;font-size:16px;cursor:pointer;background:${v===cur?'var(--blue)':'var(--card)'};color:${v===cur?'#fff':'var(--text2)'};border:1px solid ${v===cur?'var(--blue)':'var(--border)'}">${lbl}</button>`).join('')+'</div>';
+}
+
+// ── SALES SUMMARY ──
+function _gbrSales(period) {
+  period = period||'month';
+  const todayStr = new Date().toISOString().slice(0,10);
+  const orders = period==='all' ? _gbOrders : _gbOrders.filter(o=>{
+    const d = (o.created_at||'').slice(0,10) || todayStr;
+    return _gbInPeriod(d, period);
+  });
+  const total   = orders.reduce((s,o)=>s+parseFloat(o.total_amount||0),0);
+  const deposits= orders.reduce((s,o)=>s+parseFloat(o.deposit_paid||0),0);
+  const avg     = orders.length ? total/orders.length : 0;
+  const rows    = orders.length ? orders.map(o=>{
+    const items = _gbParseItems(o.items);
+    const colorMap={'Ordered':'var(--text2)','In Transit':'var(--yellow)','Received':'var(--blue)','Ready for Pickup':'var(--purple)','Delivered':'var(--green)','Paid':'var(--green)'};
+    const sc = colorMap[o.status]||'var(--text2)';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 8px;color:var(--text2)">${(o.created_at||'').slice(0,10)||'—'}</td>
+      <td style="padding:10px 8px"><strong>${o.customer_name||'—'}</strong></td>
+      <td style="padding:10px 8px;color:var(--text2);font-size:16px">${items.slice(0,55)}${items.length>55?'…':''}</td>
+      <td style="padding:10px 8px;text-align:right;color:var(--green)">${_gbFmt$(o.total_amount)}</td>
+      <td style="padding:10px 8px;text-align:right;color:var(--text2)">${_gbFmt$(o.deposit_paid)}</td>
+      <td style="padding:10px 8px;color:${sc}">${o.status||'—'}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:30px">No orders found for this period</td></tr>';
+  return `
+    ${_gbrPeriodBtns('sales',period,[['7days','Last 7 Days'],['week','This Week'],['month','This Month'],['lastmonth','Last Month'],['all','All Time']])}
+    <h3 style="font-size:22px;font-weight:800;margin-bottom:16px">📊 Sales Summary — ${_gbPeriodLabel(period)}</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:24px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--green)">${_gbFmt$(total)}</div><div style="font-size:15px;color:var(--text2);margin-top:4px">Total Revenue</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--blue)">${orders.length}</div><div style="font-size:15px;color:var(--text2);margin-top:4px">Orders</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--text)">${_gbFmt$(avg)}</div><div style="font-size:15px;color:var(--text2);margin-top:4px">Avg Order</div></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;font-weight:800;color:var(--yellow)">${_gbFmt$(deposits)}</div><div style="font-size:15px;color:var(--text2);margin-top:4px">Deposits Taken</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:17px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Date</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Customer</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Items</th>
+        <th style="text-align:right;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Total</th>
+        <th style="text-align:right;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Deposit</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Status</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── DELIVERY SCHEDULE ──
+function _gbrDelivery(period) {
+  period = period||'week';
+  const todayStr = new Date().toISOString().slice(0,10);
+  const orders = period==='all'
+    ? _gbOrders.filter(o=>o.delivery_date)
+    : _gbOrders.filter(o=>o.delivery_date && _gbInPeriod(o.delivery_date, period));
+  orders.sort((a,b)=>(a.delivery_date||'')>(b.delivery_date||'')?1:-1);
+  const rows = orders.length ? orders.map(o=>{
+    const items=_gbParseItems(o.items);
+    const isPast=o.delivery_date<todayStr;
+    const statusColor={'Delivered':'var(--green)','Paid':'var(--green)'}[o.status]||(isPast?'var(--red)':'var(--blue)');
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:12px 8px;font-weight:700;color:var(--blue);white-space:nowrap">${_gbFmtDate(o.delivery_date)}</td>
+      <td style="padding:12px 8px"><strong>${o.customer_name||'—'}</strong></td>
+      <td style="padding:12px 8px;color:var(--text2)">${o.phone||'—'}</td>
+      <td style="padding:12px 8px;color:var(--text2);font-size:16px">${items}</td>
+      <td style="padding:12px 8px;color:${statusColor}">${o.status||'—'}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:30px">No deliveries scheduled for this period</td></tr>';
+  return `
+    ${_gbrPeriodBtns('delivery',period,[['week','This Week'],['nextweek','Next Week'],['month','This Month'],['30days','Next 30 Days'],['all','All Scheduled']])}
+    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px">🚚 Delivery Schedule — ${_gbPeriodLabel(period)}</h3>
+    <div style="font-size:17px;color:var(--text2);margin-bottom:16px">${orders.length} deliver${orders.length===1?'y':'ies'} scheduled</div>
+    <table style="width:100%;border-collapse:collapse;font-size:17px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Delivery Date</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Customer</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Phone</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Items</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Status</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── ORDER STATUS ──
+function _gbrStatus() {
+  const statuses=['Ordered','In Transit','Received','Ready for Pickup','Delivered','Paid'];
+  const colors={'Ordered':'var(--text2)','In Transit':'var(--yellow)','Received':'var(--blue)','Ready for Pickup':'var(--purple)','Delivered':'var(--green)','Paid':'var(--green)'};
+  const groups={};
+  statuses.forEach(s=>{groups[s]=[];});
+  _gbOrders.forEach(o=>{ const s=o.status||'Ordered'; if(!groups[s]) groups[s]=[]; groups[s].push(o); });
+  const totalVal=_gbOrders.reduce((a,o)=>a+parseFloat(o.total_amount||0),0);
+  const cards=statuses.map(s=>{
+    const ords=groups[s]||[];
+    const val=ords.reduce((a,o)=>a+parseFloat(o.total_amount||0),0);
+    const c=colors[s]||'var(--text2)';
+    return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:20px">
+      <div style="font-size:26px;font-weight:800;color:${c}">${ords.length}</div>
+      <div style="font-size:17px;font-weight:700;margin:6px 0">${s}</div>
+      <div style="font-size:15px;color:var(--text2)">${_gbFmt$(val)}</div>
+      ${ords.slice(0,3).map(o=>`<div style="font-size:14px;color:var(--text3);margin-top:4px">• ${o.customer_name||'—'}</div>`).join('')}
+      ${ords.length>3?`<div style="font-size:14px;color:var(--text3);margin-top:4px">+${ords.length-3} more</div>`:''}
+    </div>`;
+  }).join('');
+  return `
+    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px">📦 Order Status — All Orders</h3>
+    <div style="font-size:17px;color:var(--text2);margin-bottom:20px">${_gbOrders.length} total orders · ${_gbFmt$(totalVal)} total value</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px">${cards}</div>`;
+}
+
+// ── MANUFACTURER ARRIVALS ──
+function _gbrArrivals(period) {
+  period = period||'month';
+  const orders = period==='all'
+    ? _gbOrders.filter(o=>o.expected_date)
+    : _gbOrders.filter(o=>o.expected_date && _gbInPeriod(o.expected_date, period));
+  orders.sort((a,b)=>(a.expected_date||'')>(b.expected_date||'')?1:-1);
+  const mfrs={};
+  orders.forEach(o=>{ const m=o.manufacturer||'Unknown'; if(!mfrs[m]) mfrs[m]=[]; mfrs[m].push(o); });
+  const sections=Object.entries(mfrs).map(([mfr,ords])=>{
+    const rows=ords.map(o=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px 8px;color:var(--yellow);white-space:nowrap">${_gbFmtDate(o.expected_date)}</td>
+      <td style="padding:10px 8px">${o.customer_name||'—'}</td>
+      <td style="padding:10px 8px;color:var(--text2);font-size:16px">${_gbParseItems(o.items)}</td>
+      <td style="padding:10px 8px;color:${o.status==='Received'?'var(--green)':'var(--blue)'}">${o.status||'—'}</td>
+    </tr>`).join('');
+    return `<div style="margin-bottom:24px">
+      <div style="font-size:18px;font-weight:700;color:var(--yellow);margin-bottom:10px">🏭 ${mfr} <span style="font-size:15px;font-weight:400;color:var(--text2)">(${ords.length} item${ords.length===1?'':'s'})</span></div>
+      <table style="width:100%;border-collapse:collapse;font-size:17px">
+        <thead><tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:8px;color:var(--text2);font-weight:600;white-space:nowrap">Expected</th>
+          <th style="text-align:left;padding:8px;color:var(--text2);font-weight:600">Customer</th>
+          <th style="text-align:left;padding:8px;color:var(--text2);font-weight:600">Items</th>
+          <th style="text-align:left;padding:8px;color:var(--text2);font-weight:600">Status</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+  return `
+    ${_gbrPeriodBtns('arrivals',period,[['week','This Week'],['month','This Month'],['30days','Next 30 Days'],['all','All Expected']])}
+    <h3 style="font-size:22px;font-weight:800;margin-bottom:8px">🏭 Manufacturer Arrivals — ${_gbPeriodLabel(period)}</h3>
+    <div style="font-size:17px;color:var(--text2);margin-bottom:20px">${orders.length} item${orders.length===1?'':'s'} from ${Object.keys(mfrs).length} manufacturer${Object.keys(mfrs).length===1?'':'s'}</div>
+    ${sections||'<div style="text-align:center;color:var(--text3);padding:40px">No arrivals found for this period</div>'}`;
+}
+
+// ── OUTSTANDING BALANCES ──
+function _gbrBalance() {
+  const orders=_gbOrders.filter(o=>{
+    const bal=parseFloat(o.total_amount||0)-parseFloat(o.deposit_paid||0);
+    return bal>0.01 && o.status!=='Paid';
+  });
+  orders.sort((a,b)=>(a.delivery_date||'9999')>(b.delivery_date||'9999')?1:-1);
+  const totalOwed=orders.reduce((s,o)=>s+(parseFloat(o.total_amount||0)-parseFloat(o.deposit_paid||0)),0);
+  const rows=orders.length ? orders.map(o=>{
+    const bal=parseFloat(o.total_amount||0)-parseFloat(o.deposit_paid||0);
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:12px 8px"><strong>${o.customer_name||'—'}</strong></td>
+      <td style="padding:12px 8px;color:var(--text2)">${o.phone||'—'}</td>
+      <td style="padding:12px 8px;text-align:right">${_gbFmt$(o.total_amount)}</td>
+      <td style="padding:12px 8px;text-align:right;color:var(--text2)">${_gbFmt$(o.deposit_paid)}</td>
+      <td style="padding:12px 8px;text-align:right;font-weight:700;color:var(--yellow)">${_gbFmt$(bal)}</td>
+      <td style="padding:12px 8px;color:var(--text2);white-space:nowrap">${_gbFmtDate(o.delivery_date)}</td>
+      <td style="padding:12px 8px;color:var(--blue)">${o.status||'—'}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:30px">No outstanding balances — all paid up! 🎉</td></tr>';
+  return `
+    <h3 style="font-size:22px;font-weight:800;margin-bottom:16px">💰 Outstanding Balances</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="background:var(--yellow-bg);border:1px solid rgba(210,153,34,0.3);border-radius:10px;padding:16px 24px">
+        <div style="font-size:26px;font-weight:800;color:var(--yellow)">${_gbFmt$(totalOwed)}</div>
+        <div style="font-size:15px;color:var(--text2);margin-top:4px">Total Outstanding</div>
+      </div>
+      <div style="background:var(--blue-bg);border:1px solid rgba(88,166,255,0.3);border-radius:10px;padding:16px 24px">
+        <div style="font-size:26px;font-weight:800;color:var(--blue)">${orders.length}</div>
+        <div style="font-size:15px;color:var(--text2);margin-top:4px">Customers Owing</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:17px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Customer</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Phone</th>
+        <th style="text-align:right;padding:10px 8px;color:var(--text2);font-weight:600">Total</th>
+        <th style="text-align:right;padding:10px 8px;color:var(--text2);font-weight:600">Deposit</th>
+        <th style="text-align:right;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Balance Due</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600;white-space:nowrap">Delivery Date</th>
+        <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Status</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+// ── PRINT GBF REPORT ──
+function printGBReport() {
+  if (!_gbCurrentReport) return;
+  const now=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const titles={sales:'Sales Summary',delivery:'Delivery Schedule',status:'Order Status',arrivals:'Manufacturer Arrivals',balance:'Outstanding Balances'};
+  const title=titles[_gbCurrentReport.type]||'Report';
+  const win=window.open('','_blank','width=950,height=700');
+  if(!win) return;
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>GBF ${title}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;margin:0;padding:28px 36px;color:#1a1a1a;background:#fff}
+  h1{font-size:22px;margin-bottom:4px;color:#111}
+  .sub{color:#666;font-size:14px;margin-bottom:20px;border-bottom:2px solid #ddd;padding-bottom:10px}
+  h3{font-size:20px;font-weight:800;margin-bottom:12px;color:#111}
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+  th{text-align:left;padding:8px 6px;background:#f0f0f0;font-weight:600;border-bottom:2px solid #ccc}
+  th[style*="right"]{text-align:right}
+  td{padding:8px 6px;border-bottom:1px solid #e8e8e8}
+  td[style*="right"]{text-align:right}
+  .stat-grid{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .stat-box{border:2px solid #ddd;border-radius:8px;padding:12px 18px;text-align:center;min-width:120px}
+  .stat-val{font-size:20px;font-weight:800;color:#111}
+  .stat-lbl{font-size:12px;color:#666;margin-top:2px}
+  .section-hdr{font-size:16px;font-weight:700;margin:18px 0 8px;color:#333;border-bottom:1px solid #ddd;padding-bottom:5px}
+  .footer{margin-top:28px;border-top:1px solid #ddd;padding-top:10px;font-size:12px;color:#999;display:flex;justify-content:space-between}
+  button{display:none!important}
+  div[style*="display:flex"][style*="gap"]{flex-wrap:wrap}
+  @media print{body{padding:16px 20px}}
+</style>
+</head><body>
+<h1>Great Bridge Furniture — ${title}</h1>
+<div class="sub">Generated: ${now} | lightview.win</div>
+<div id="rpt">${_gbCurrentReport.html}</div>
+<div class="footer">
+  <span>Great Bridge Furniture — Chesapeake, VA</span>
+  <span>lightview.win</span>
+</div>
+<script>setTimeout(()=>window.print(),400);<\/script>
+</body></html>`);
+  win.document.close();
 }
 
 // ===== INIT =====
