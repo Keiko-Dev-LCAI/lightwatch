@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LightView — AI Monitoring & Blockchain Verification</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<meta name="theme-color" content="#58a6ff">
 <style>
 :root {
   --bg: #0d1117; --card: #161b22; --sidebar-bg: #13181f;
@@ -477,6 +480,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="nav" onclick="showSection('calendar')" id="nav-calendar" style="display:none">
       <span class="nav-icon">📅</span> Calendar
     </div>
+    <div class="nav" onclick="showSection('docs')" id="nav-docs" style="display:none">
+      <span class="nav-icon">📁</span> Documents
+    </div>
     <div class="sidebar-footer">
       <div style="color:var(--text3);font-size:18px;margin-bottom:4px">Powered by</div>
       <div style="color:var(--text2);font-size:18px;font-weight:600">Lightchain AIVM</div>
@@ -666,6 +672,45 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <div>📄</div>
           <div>Select a report type above to generate</div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== DOCUMENTS (GB only) ===== -->
+    <div class="section" id="section-docs">
+      <div class="sec-header" style="flex-wrap:wrap;gap:12px">
+        <h2 class="sec-title">📁 Documents</h2>
+        <button onclick="docAddFolder()" class="btn btn-blue" style="font-size:18px;padding:8px 16px">+ Add Folder</button>
+      </div>
+
+      <!-- browser support check -->
+      <div id="doc-no-support" style="display:none;background:var(--yellow-bg);border:1px solid rgba(210,153,34,0.3);border-radius:12px;padding:20px;color:var(--yellow);font-size:18px;margin-bottom:20px">
+        ⚠️ This feature requires Google Chrome or Microsoft Edge on a desktop computer.
+      </div>
+
+      <!-- empty state -->
+      <div id="doc-empty" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:48px;text-align:center">
+        <div style="font-size:48px;margin-bottom:16px">📂</div>
+        <div style="font-size:22px;font-weight:700;margin-bottom:10px">No folders added yet</div>
+        <div style="color:var(--text2);font-size:18px;margin-bottom:24px">Add a folder from your computer to organize documents here.<br>Files stay on your PC — nothing is uploaded.</div>
+        <button onclick="docAddFolder()" class="btn btn-blue" style="font-size:18px;padding:10px 24px">+ Add My First Folder</button>
+      </div>
+
+      <!-- main content (hidden until folders added) -->
+      <div id="doc-main" style="display:none">
+        <!-- folders list -->
+        <div id="doc-folders-list" style="margin-bottom:20px"></div>
+
+        <!-- search + filter bar -->
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+          <input id="docSearch" type="text" placeholder="Search files…" oninput="docRender()" style="flex:1;min-width:180px;background:var(--bg);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:17px;outline:none">
+          <button onclick="docScanFolders()" class="btn btn-out" style="font-size:16px;padding:8px 14px">🔄 Refresh</button>
+        </div>
+
+        <!-- category pills -->
+        <div id="doc-cat-pills" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px"></div>
+
+        <!-- file list -->
+        <div id="doc-file-list"></div>
       </div>
     </div>
 
@@ -1452,10 +1497,12 @@ function switchEntity(val) {
   // Show/hide GB-only nav items
   const ordersNav   = document.getElementById('nav-orders');
   const calNav      = document.getElementById('nav-calendar');
+  const docsNav     = document.getElementById('nav-docs');
   const portNav     = document.getElementById('nav-portfolio');
   if (val === 'gb') {
     ordersNav.style.display  = '';
     calNav.style.display     = '';
+    if (docsNav) docsNav.style.display = '';
     if (portNav) portNav.style.display = 'none';   // GB uses Orders section instead
     loadOrders();
     // Start on Orders section for GB
@@ -1464,9 +1511,10 @@ function switchEntity(val) {
   } else {
     ordersNav.style.display  = 'none';
     calNav.style.display     = 'none';
+    if (docsNav) docsNav.style.display = 'none';
     if (portNav) portNav.style.display = '';
     // If we were on a GB section, jump to dashboard
-    if (['orders','calendar'].includes(currentSection)) currentSection = 'dashboard';
+    if (['orders','calendar','docs'].includes(currentSection)) currentSection = 'dashboard';
     renderAll();
     showSection(currentSection);
   }
@@ -1489,6 +1537,7 @@ function showSection(name) {
   if (name === 'orders') renderOrderTable();
   if (name === 'calendar') loadCalendar();
   if (name === 'reports') { renderReportSection(); }
+  if (name === 'docs')    { loadDocSection(); }
   // howto is static — no render needed
   closeSidebar();   // close mobile sidebar when any nav item tapped
 }
@@ -3015,6 +3064,257 @@ function printGBReport() {
 <script>setTimeout(()=>window.print(),400);<\/script>
 </body></html>`);
   win.document.close();
+}
+
+// ===== DOCUMENTS (GB only) =====
+const _DOC_CATS = [
+  { id: 'receipts',   label: '📄 Customer Receipts' },
+  { id: 'invoices',   label: '🧾 Manufacturer Invoices' },
+  { id: 'deliveries', label: '🚚 Delivery Confirmations' },
+  { id: 'warranties', label: '🛡️ Warranties' },
+  { id: 'photos',     label: '📷 Item Photos' },
+  { id: 'other',      label: '📁 Other' },
+];
+let _docFiles     = [];
+let _docCatFilter = 'all';
+let _docFolders   = [];
+
+// --- IndexedDB helpers ---
+function _docOpenDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('lightview-docs', 1);
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('folders'))
+        db.createObjectStore('folders', { keyPath: 'id' });
+    };
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+async function _docSaveFolderIDB(folder) {
+  const db = await _docOpenDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('folders', 'readwrite');
+    tx.objectStore('folders').put(folder);
+    tx.oncomplete = () => res();
+    tx.onerror    = e => rej(e.target.error);
+  });
+}
+async function _docLoadFoldersIDB() {
+  const db = await _docOpenDB();
+  return new Promise((res, rej) => {
+    const tx  = db.transaction('folders', 'readonly');
+    const req = tx.objectStore('folders').getAll();
+    req.onsuccess = e => res(e.target.result || []);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+async function _docDeleteFolderIDB(id) {
+  const db = await _docOpenDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('folders', 'readwrite');
+    tx.objectStore('folders').delete(id);
+    tx.oncomplete = () => res();
+    tx.onerror    = e => rej(e.target.error);
+  });
+}
+
+// --- Entry point ---
+async function loadDocSection() {
+  if (!('showDirectoryPicker' in window)) {
+    document.getElementById('doc-no-support').style.display = '';
+    document.getElementById('doc-empty').style.display      = 'none';
+    document.getElementById('doc-main').style.display       = 'none';
+    return;
+  }
+  try { _docFolders = await _docLoadFoldersIDB(); }
+  catch(e) { _docFolders = []; }
+  if (_docFolders.length === 0) {
+    document.getElementById('doc-empty').style.display = '';
+    document.getElementById('doc-main').style.display  = 'none';
+  } else {
+    document.getElementById('doc-empty').style.display = 'none';
+    document.getElementById('doc-main').style.display  = '';
+    await docScanFolders();
+  }
+}
+
+// --- Add folder ---
+function docAddFolder() {
+  if (!('showDirectoryPicker' in window)) {
+    toast('This feature requires Chrome or Edge on a desktop computer.');
+    return;
+  }
+  _docShowCatModal(async (catId) => {
+    if (!catId) return;
+    try {
+      const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+      const folder = {
+        id:       'f_' + Date.now(),
+        name:     dirHandle.name,
+        handle:   dirHandle,
+        category: catId,
+        addedAt:  new Date().toISOString()
+      };
+      await _docSaveFolderIDB(folder);
+      _docFolders.push(folder);
+      document.getElementById('doc-empty').style.display = 'none';
+      document.getElementById('doc-main').style.display  = '';
+      await docScanFolders();
+      toast('✓ Folder added: ' + dirHandle.name);
+    } catch(e) {
+      if (e.name !== 'AbortError') toast('Could not add folder — try again.');
+    }
+  });
+}
+
+// --- Category selection modal ---
+function _docShowCatModal(cb) {
+  let ov = document.getElementById('_docCatOv');
+  if (ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = '_docCatOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;align-items:center;justify-content:center';
+  const rows = _DOC_CATS.map(c =>
+    `<button onclick="_docCatPick('${c.id}')" style="display:block;width:100%;text-align:left;padding:14px 20px;background:var(--bg);border:1px solid var(--border2);color:var(--text);border-radius:10px;font-size:18px;cursor:pointer;margin-bottom:10px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border2)'">${c.label}</button>`
+  ).join('');
+  ov.innerHTML = `<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 32px;min-width:320px;max-width:90vw">
+    <h3 style="font-size:22px;font-weight:700;margin-bottom:18px">📂 What type of folder is this?</h3>
+    ${rows}
+    <button onclick="_docCatPick(null)" style="display:block;width:100%;padding:12px;background:none;border:1px solid var(--border2);color:var(--text2);border-radius:10px;font-size:18px;cursor:pointer;margin-top:4px">Cancel</button>
+  </div>`;
+  document.body.appendChild(ov);
+  window._docCatCB = cb;
+}
+function _docCatPick(catId) {
+  const ov = document.getElementById('_docCatOv');
+  if (ov) ov.remove();
+  if (window._docCatCB) window._docCatCB(catId);
+}
+
+// --- Scan folders ---
+async function docScanFolders() {
+  _docFiles = [];
+  const verified = [];
+  for (const folder of _docFolders) {
+    try {
+      let perm = await folder.handle.queryPermission({ mode: 'read' });
+      if (perm !== 'granted') perm = await folder.handle.requestPermission({ mode: 'read' });
+      if (perm !== 'granted') continue;
+      for await (const [name, handle] of folder.handle.entries()) {
+        if (handle.kind === 'file' && !name.startsWith('.')) {
+          const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
+          _docFiles.push({ name, ext, cat: folder.category,
+            folderId: folder.id, folderName: folder.name, fileHandle: handle });
+        }
+      }
+      verified.push(folder);
+    } catch(e) { /* folder inaccessible — skip */ }
+  }
+  _docRenderFolderStrip(verified);
+  docRender();
+}
+
+// --- Folder strip ---
+function _docRenderFolderStrip(folders) {
+  const el = document.getElementById('doc-folders-list');
+  if (!el || !folders.length) { if(el) el.innerHTML=''; return; }
+  el.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:4px">' +
+    folders.map(f => {
+      const cat = _DOC_CATS.find(c => c.id === f.category) || _DOC_CATS[5];
+      return `<div style="display:inline-flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 16px">
+        <span style="font-size:22px">${cat.label.split(' ')[0]}</span>
+        <div>
+          <div style="font-size:18px;font-weight:700">${f.name}</div>
+          <div style="font-size:16px;color:var(--text3)">${cat.label.replace(/^\S+\s/,'')}</div>
+        </div>
+        <button onclick="docRemoveFolder('${f.id}')" title="Remove folder" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:20px;padding:2px 8px;margin-left:6px">✕</button>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// --- Category pills ---
+function _docRenderCatPills() {
+  const el = document.getElementById('doc-cat-pills');
+  if (!el) return;
+  const counts = {};
+  _docFiles.forEach(f => { counts[f.cat] = (counts[f.cat] || 0) + 1; });
+  const pills = [{ id: 'all', label: 'All Files', count: _docFiles.length }];
+  _DOC_CATS.forEach(c => { if (counts[c.id]) pills.push({ id: c.id, label: c.label, count: counts[c.id] }); });
+  el.innerHTML = pills.map(p => {
+    const a = _docCatFilter === p.id;
+    return `<button onclick="docSetCat('${p.id}')" style="padding:7px 16px;border-radius:20px;font-size:18px;font-weight:600;cursor:pointer;border:1px solid ${a ? 'var(--blue)' : 'var(--border2)'};background:${a ? 'var(--blue-bg)' : 'var(--card)'};color:${a ? 'var(--blue)' : 'var(--text2)'}">${p.label} <span style="font-size:16px;opacity:.7">${p.count}</span></button>`;
+  }).join('');
+}
+function docSetCat(id) { _docCatFilter = id; docRender(); }
+
+// --- Render file grid ---
+function docRender() {
+  _docRenderCatPills();
+  const el = document.getElementById('doc-file-list');
+  if (!el) return;
+  const q = (document.getElementById('docSearch')?.value || '').toLowerCase();
+  let files = _docFiles;
+  if (_docCatFilter !== 'all') files = files.filter(f => f.cat === _docCatFilter);
+  if (q) files = files.filter(f => f.name.toLowerCase().includes(q) || f.folderName.toLowerCase().includes(q));
+  if (!files.length) {
+    el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text2);font-size:18px">No files found</div>';
+    return;
+  }
+  files = [...files].sort((a,b) => a.name.localeCompare(b.name));
+  const cards = files.map((f, i) => {
+    const icon = _docIcon(f.ext);
+    const cat  = _DOC_CATS.find(c => c.id === f.cat) || _DOC_CATS[5];
+    const globalIdx = _docFiles.indexOf(f);
+    return `<div onclick="docOpenFile(${globalIdx})" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:40px;margin-bottom:12px">${icon}</div>
+      <div style="font-size:18px;font-weight:700;word-break:break-word;margin-bottom:6px">${f.name}</div>
+      <div style="font-size:16px;color:var(--text3)">${cat.label.replace(/^\S+\s/,'')} &middot; ${f.folderName}</div>
+    </div>`;
+  });
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">' + cards.join('') + '</div>';
+}
+
+function _docIcon(ext) {
+  const m = { pdf:'📄', doc:'📝', docx:'📝', txt:'📄', rtf:'📝',
+              xls:'📊', xlsx:'📊', csv:'📊',
+              jpg:'🖼️', jpeg:'🖼️', png:'🖼️', gif:'🖼️', webp:'🖼️', heic:'🖼️',
+              mp4:'🎬', mov:'🎬', avi:'🎬', mp3:'🎵', wav:'🎵',
+              zip:'🗜️', rar:'🗜️' };
+  return m[ext] || '📄';
+}
+
+// --- Open file ---
+async function docOpenFile(idx) {
+  const f = _docFiles[idx];
+  if (!f) return;
+  try {
+    const file = await f.fileHandle.getFile();
+    const url  = URL.createObjectURL(file);
+    const a    = document.createElement('a');
+    a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch(e) {
+    toast('Could not open file — try refreshing the page and re-adding the folder.');
+  }
+}
+
+// --- Remove folder ---
+async function docRemoveFolder(id) {
+  if (!confirm('Remove this folder from Documents?\n\nYour files on the PC are NOT deleted.')) return;
+  try { await _docDeleteFolderIDB(id); } catch(e) {}
+  _docFolders = _docFolders.filter(f => f.id !== id);
+  if (!_docFolders.length) {
+    _docFiles = [];
+    document.getElementById('doc-empty').style.display = '';
+    document.getElementById('doc-main').style.display  = 'none';
+    const strip = document.getElementById('doc-folders-list');
+    if (strip) strip.innerHTML = '';
+  } else {
+    await docScanFolders();
+  }
+  toast('Folder removed');
 }
 
 // ===== INIT =====
