@@ -400,6 +400,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <option value="mfg">Meridian Manufacturing</option>
       <option value="restaurant">Golden Leaf Restaurant Group</option>
       <option value="realestate">Harbor View Properties</option>
+      <option value="gb">🛋️ Great Bridge Furniture</option>
     </select>
     <div class="overall-pill" id="overallPill">
       <div class="dot dot-red" id="overallDot"></div>
@@ -434,6 +435,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
     </div>
     <div class="nav" onclick="showSection('howto')" id="nav-howto">
       <span class="nav-icon">💡</span> How It Works
+    </div>
+    <div class="nav" onclick="showSection('orders')" id="nav-orders" style="display:none">
+      <span class="nav-icon">📦</span> Orders
+      <span class="nav-badge" id="ordersBadge" style="display:none">0</span>
     </div>
     <div class="sidebar-footer">
       <div style="color:var(--text3);font-size:18px;margin-bottom:4px">Powered by</div>
@@ -795,7 +800,121 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="port-grid" id="portGrid" style="grid-template-columns:repeat(2,1fr)"></div>
     </div>
 
+    <!-- ═══ GREAT BRIDGE FURNITURE — ORDERS ═══ -->
+    <div class="section" id="section-orders">
+      <div class="sec-header">
+        <h2 class="sec-title">🛋️ Great Bridge Furniture — Orders</h2>
+        <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
+      </div>
+
+      <!-- AIVM Attention Panel -->
+      <div class="aivm-bar" id="gb-attention-bar" style="margin-bottom:18px">
+        <button class="aivm-btn" id="gb-attn-btn" onclick="getAttention()">☀️ What needs attention today?</button>
+        <div id="gb-attn-result" style="display:none;margin-top:10px;white-space:pre-line;font-size:18px;line-height:1.6;color:var(--text1)"></div>
+      </div>
+
+      <!-- Import Panel -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px">
+        <div style="font-size:20px;font-weight:600;color:var(--text1);margin-bottom:10px">📥 Import Spreadsheet</div>
+        <div style="font-size:18px;color:var(--text2);margin-bottom:12px">Upload your existing order spreadsheet (.csv or .xlsx) — AIVM will read it and pull out every order automatically.</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <label style="cursor:pointer;background:var(--accent);color:#fff;padding:10px 20px;border-radius:6px;font-size:18px;font-weight:600">
+            Choose File
+            <input type="file" id="gbFileInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileSelect(this)">
+          </label>
+          <span id="gbFileName" style="font-size:18px;color:var(--text2)">No file chosen</span>
+          <button class="btn" id="gbImportBtn" onclick="importSpreadsheet()" style="display:none;font-size:18px;padding:10px 20px">Analyze with AIVM →</button>
+        </div>
+        <div id="gbImportStatus" style="margin-top:10px;font-size:18px;color:var(--text2);display:none"></div>
+
+        <!-- Preview table for imported orders -->
+        <div id="gbImportPreview" style="display:none;margin-top:14px">
+          <div style="font-size:19px;font-weight:600;color:var(--text1);margin-bottom:8px" id="gbPreviewTitle"></div>
+          <div style="overflow-x:auto">
+            <table id="gbPreviewTable" style="width:100%;border-collapse:collapse;font-size:17px"></table>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:12px">
+            <button class="btn" id="gbSaveImportBtn" onclick="saveImportedOrders()" style="font-size:18px;padding:10px 22px;background:var(--green)">✅ Save All to System</button>
+            <button onclick="document.getElementById('gbImportPreview').style.display='none'" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:10px 18px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Table -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
+        <div id="gbOrdersLoading" style="padding:24px;text-align:center;font-size:18px;color:var(--text2)">Loading orders…</div>
+        <div id="gbOrdersEmpty" style="display:none;padding:32px;text-align:center;font-size:19px;color:var(--text2)">
+          No orders yet. Import your spreadsheet or add a new order above.
+        </div>
+        <div style="overflow-x:auto">
+          <table id="gbOrderTable" style="width:100%;border-collapse:collapse;font-size:17px;display:none">
+            <thead>
+              <tr style="background:var(--bg3);color:var(--text2);text-align:left">
+                <th style="padding:12px 14px;font-weight:600">Customer</th>
+                <th style="padding:12px 14px;font-weight:600">Items</th>
+                <th style="padding:12px 14px;font-weight:600">Manufacturer</th>
+                <th style="padding:12px 14px;font-weight:600">Expected</th>
+                <th style="padding:12px 14px;font-weight:600">Status</th>
+                <th style="padding:12px 14px;font-weight:600">Balance</th>
+                <th style="padding:12px 14px;font-weight:600">Action</th>
+              </tr>
+            </thead>
+            <tbody id="gbOrderTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
+</div>
+
+<!-- NEW ORDER MODAL -->
+<div id="gbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;overflow-y:auto">
+  <div style="background:var(--bg1);border:1px solid var(--border);border-radius:10px;margin:40px auto;max-width:620px;padding:28px;color:var(--text1)">
+    <div style="font-size:24px;font-weight:700;margin-bottom:20px">📦 New Customer Order</div>
+    <div style="display:grid;gap:14px">
+      <label style="font-size:18px;font-weight:600">Customer Name *
+        <input id="mo-name" type="text" placeholder="e.g. Smith Family" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Phone
+        <input id="mo-phone" type="text" placeholder="e.g. 757-555-0100" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Items Ordered *
+        <textarea id="mo-items" placeholder="e.g. Sectional sofa (gray), Coffee table, 2x end tables" rows="3" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box;resize:vertical"></textarea>
+      </label>
+      <label style="font-size:18px;font-weight:600">Manufacturer / Supplier
+        <input id="mo-mfr" type="text" placeholder="e.g. Ashley Furniture" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <label style="font-size:18px;font-weight:600">Total Sale Amount
+          <input id="mo-total" type="number" placeholder="0.00" step="0.01" min="0" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        </label>
+        <label style="font-size:18px;font-weight:600">Deposit Paid
+          <input id="mo-deposit" type="number" placeholder="0.00" step="0.01" min="0" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        </label>
+      </div>
+      <label style="font-size:18px;font-weight:600">Expected Delivery Date
+        <input id="mo-date" type="date" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+      </label>
+      <label style="font-size:18px;font-weight:600">Status
+        <select id="mo-status" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+          <option value="Ordered">Ordered</option>
+          <option value="In Transit">In Transit</option>
+          <option value="Received">Received</option>
+          <option value="Ready for Pickup">Ready for Pickup</option>
+          <option value="Delivered">Delivered</option>
+          <option value="Paid">Paid</option>
+        </select>
+      </label>
+      <label style="font-size:18px;font-weight:600">Notes
+        <textarea id="mo-notes" placeholder="Any additional notes..." rows="2" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box;resize:vertical"></textarea>
+      </label>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px">
+      <button onclick="saveNewOrder()" style="flex:1;background:var(--accent);color:#fff;border:none;padding:14px;border-radius:6px;font-size:20px;font-weight:700;cursor:pointer">Save Order</button>
+      <button onclick="closeModal()" style="background:var(--bg3);color:var(--text2);border:1px solid var(--border);padding:14px 22px;border-radius:6px;font-size:18px;cursor:pointer">Cancel</button>
+    </div>
+  </div>
 </div>
 
 <!-- TOAST -->
@@ -807,7 +926,31 @@ const BACKEND = 'https://web-production-c7177.up.railway.app';
 
 // ===== DATA =====
 
+// GB state
+let _gbOrders = [];
+let _gbPendingImport = [];
+
 const D = {
+  gb: {
+    name: 'Great Bridge Furniture',
+    industry: 'Retail Furniture',
+    portfolio_label: 'Orders',
+    overall: 'green',
+    monitors: [
+      {id:'gb1', label:'Open Orders', val:0, unit:'orders', target:'All tracked', status:'green', updated:'just now'},
+      {id:'gb2', label:'Overdue / At Risk', val:0, unit:'orders', target:'0', status:'green', updated:'just now'},
+      {id:'gb3', label:'Ready for Pickup', val:0, unit:'orders', target:'0', status:'green', updated:'just now'},
+      {id:'gb4', label:'Outstanding Balance', val:'$0', unit:'', target:'Collect on delivery', status:'green', updated:'just now'},
+    ],
+    stats: {alerts:0, uptime:'N/A', monitored:4, points:4},
+    alerts: [],
+    rules: [
+      {text:'Alert when any order is 7+ days past expected delivery date', active:true, added:'2026-06-14', context:'Added at pilot setup'},
+      {text:'Flag when Ready for Pickup orders have not been contacted in 3 days', active:true, added:'2026-06-14', context:'Added at pilot setup'},
+    ],
+    chain: [],
+    portfolio: [],
+  },
   mfg: {
     name: 'Meridian Manufacturing',
     industry: 'Manufacturing',
@@ -1140,8 +1283,22 @@ function switchEntity(val) {
   document.getElementById('aivm-analysis').style.display = 'none';
   document.getElementById('aivm-btn').textContent = 'Analyze with AIVM →';
   document.getElementById('aivm-btn').disabled = false;
-  renderAll();
-  showSection(currentSection);
+
+  // Show/hide Orders nav for GB
+  const ordersNav = document.getElementById('nav-orders');
+  if (val === 'gb') {
+    ordersNav.style.display = '';
+    loadOrders();
+    // Start on Orders section for GB
+    renderAll();
+    showSection('orders');
+  } else {
+    ordersNav.style.display = 'none';
+    // If we were on orders, jump to dashboard
+    if (currentSection === 'orders') currentSection = 'dashboard';
+    renderAll();
+    showSection(currentSection);
+  }
   toast('Switched to ' + D[current].name);
 }
 
@@ -1149,13 +1306,16 @@ function showSection(name) {
   currentSection = name;
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav').forEach(n => n.classList.remove('active'));
-  document.getElementById('section-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
+  const secEl = document.getElementById('section-' + name);
+  const navEl = document.getElementById('nav-' + name);
+  if (secEl) secEl.classList.add('active');
+  if (navEl) navEl.classList.add('active');
   if (name === 'dashboard') renderDashboard();
   if (name === 'alerts') renderAlerts();
   if (name === 'rules') renderRules();
   if (name === 'blockchain') renderBlockchain();
   if (name === 'portfolio') renderPortfolio();
+  if (name === 'orders') renderOrderTable();
   if (name === 'reports') { selectedReport = null; document.querySelectorAll('.rtype').forEach(r=>r.classList.remove('sel')); document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📄</div><div>Select a report type above to generate</div></div>'; }
   // howto is static — no render needed
 }
@@ -1574,6 +1734,307 @@ function analyzeWithAIVM() {
     btn.disabled = false;
     btn.textContent = '⟳ Refresh Analysis';
   });
+}
+
+// ===== GREAT BRIDGE FURNITURE — ORDER FUNCTIONS =====
+
+function _gbStatusColor(status) {
+  return {
+    'Ready for Pickup': '#f59e0b',
+    'Ordered':          '#3b82f6',
+    'In Transit':       '#8b5cf6',
+    'Received':         '#06b6d4',
+    'Delivered':        '#10b981',
+    'Paid':             '#6b7280',
+  }[status] || '#6b7280';
+}
+
+function _gbUpdateDashboard() {
+  const open    = _gbOrders.filter(o => !['Delivered','Paid'].includes(o.status)).length;
+  const today   = new Date().toISOString().slice(0,10);
+  const overdue = _gbOrders.filter(o => o.expected_date && o.expected_date < today && !['Delivered','Paid'].includes(o.status)).length;
+  const ready   = _gbOrders.filter(o => o.status === 'Ready for Pickup').length;
+  let balance   = 0;
+  _gbOrders.forEach(o => { try { balance += (parseFloat(o.total_amount)||0) - (parseFloat(o.deposit_paid)||0); } catch(e){} });
+
+  D.gb.monitors[0].val    = open;
+  D.gb.monitors[0].status = open > 0 ? 'green' : 'green';
+  D.gb.monitors[1].val    = overdue;
+  D.gb.monitors[1].status = overdue > 0 ? 'red' : 'green';
+  D.gb.monitors[2].val    = ready;
+  D.gb.monitors[2].status = ready > 0 ? 'yellow' : 'green';
+  D.gb.monitors[3].val    = '$' + balance.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  D.gb.monitors[3].status = balance > 0 ? 'yellow' : 'green';
+
+  // Update alerts
+  D.gb.alerts = [];
+  if (overdue > 0) {
+    const names = _gbOrders.filter(o => o.expected_date && o.expected_date < today && !['Delivered','Paid'].includes(o.status)).slice(0,3).map(o => o.customer_name).join(', ');
+    D.gb.alerts.push({id:'gb-overdue', sev:'critical', icon:'🔴', title:`${overdue} Order(s) Past Expected Date`, what:`These orders are past their expected delivery date and still outstanding: ${names}`, rule:'"Alert when any order is 7+ days past expected delivery date"', baseline:'Expected by the date shown — follow up with manufacturer', notified:'Store Owner', since:today, ackd:false, hash:'0x'+Math.random().toString(16).slice(2,10)});
+  }
+  if (ready > 0) {
+    const names = _gbOrders.filter(o => o.status === 'Ready for Pickup').slice(0,3).map(o => o.customer_name).join(', ');
+    D.gb.alerts.push({id:'gb-ready', sev:'warning', icon:'🟡', title:`${ready} Order(s) Ready for Pickup — Call Customers`, what:`These orders are in the store and ready: ${names}`, rule:'"Flag when Ready for Pickup orders have not been contacted"', baseline:'Call to schedule delivery or pickup', notified:'Store Owner', since:today, ackd:false, hash:'0x'+Math.random().toString(16).slice(2,10)});
+  }
+
+  D.gb.stats.alerts = D.gb.alerts.length;
+  D.gb.overall = overdue > 0 ? 'red' : (ready > 0 ? 'yellow' : 'green');
+
+  // Update badge
+  const badge = document.getElementById('ordersBadge');
+  if (overdue + ready > 0) {
+    badge.textContent = overdue + ready;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  if (current === 'gb') {
+    renderDashboard();
+    renderAlerts();
+    updateOverallStatus();
+  }
+}
+
+function loadOrders() {
+  document.getElementById('gbOrdersLoading').style.display = '';
+  document.getElementById('gbOrdersEmpty').style.display = 'none';
+  document.getElementById('gbOrderTable').style.display = 'none';
+
+  fetch(BACKEND + '/api/gb/orders')
+    .then(r => r.json())
+    .then(data => {
+      _gbOrders = data.orders || [];
+      _gbUpdateDashboard();
+      renderOrderTable();
+    })
+    .catch(err => {
+      console.error('[GB] loadOrders error', err);
+      _gbOrders = [];
+      renderOrderTable();
+      toast('Could not load orders from server');
+    });
+}
+
+function renderOrderTable() {
+  const loading = document.getElementById('gbOrdersLoading');
+  const empty   = document.getElementById('gbOrdersEmpty');
+  const table   = document.getElementById('gbOrderTable');
+  const tbody   = document.getElementById('gbOrderTableBody');
+  if (!loading) return;
+
+  loading.style.display = 'none';
+
+  if (_gbOrders.length === 0) {
+    empty.style.display = '';
+    table.style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = '';
+
+  tbody.innerHTML = _gbOrders.map(o => {
+    const color  = _gbStatusColor(o.status);
+    let   items  = o.items || '';
+    try { const arr = JSON.parse(items); items = Array.isArray(arr) ? arr.join(', ') : items; } catch(e){}
+    const total  = parseFloat(o.total_amount || 0);
+    const dep    = parseFloat(o.deposit_paid || 0);
+    const bal    = total - dep;
+    const balStr = bal > 0 ? '<span style="color:#f59e0b">$' + bal.toFixed(2) + '</span>' : '<span style="color:#10b981">Paid</span>';
+
+    const statusOpts = ['Ordered','In Transit','Received','Ready for Pickup','Delivered','Paid']
+      .map(s => `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('');
+
+    return `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:12px 14px">
+        <div style="font-size:18px;font-weight:600;color:var(--text1)">${o.customer_name || 'Unknown'}</div>
+        <div style="font-size:16px;color:var(--text3)">${o.phone || ''}</div>
+      </td>
+      <td style="padding:12px 14px;max-width:220px">
+        <div style="font-size:17px;color:var(--text2);word-break:break-word">${items || '—'}</div>
+      </td>
+      <td style="padding:12px 14px;font-size:17px;color:var(--text2)">${o.manufacturer || '—'}</td>
+      <td style="padding:12px 14px;font-size:17px;color:var(--text2)">${o.expected_date || '—'}</td>
+      <td style="padding:12px 14px">
+        <select onchange="updateOrderStatus(${o.id}, this.value)" style="background:var(--bg3);border:1px solid var(--border);color:${color};padding:6px 10px;border-radius:6px;font-size:17px;font-weight:600;cursor:pointer">
+          ${statusOpts}
+        </select>
+      </td>
+      <td style="padding:12px 14px;font-size:17px">${balStr}</td>
+      <td style="padding:12px 14px;font-size:16px;color:var(--text3)">${o.notes ? o.notes.slice(0,50) + (o.notes.length>50?'…':'') : ''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  fetch(BACKEND + '/api/gb/orders/' + orderId, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({status: newStatus})
+  })
+  .then(r => r.json())
+  .then(() => {
+    const o = _gbOrders.find(o => o.id === orderId);
+    if (o) o.status = newStatus;
+    _gbUpdateDashboard();
+    toast('Status updated: ' + newStatus);
+  })
+  .catch(() => toast('Could not save status change'));
+}
+
+function handleFileSelect(input) {
+  const name = input.files[0] ? input.files[0].name : 'No file chosen';
+  document.getElementById('gbFileName').textContent = name;
+  document.getElementById('gbImportBtn').style.display = input.files[0] ? '' : 'none';
+  document.getElementById('gbImportPreview').style.display = 'none';
+  document.getElementById('gbImportStatus').style.display = 'none';
+}
+
+function importSpreadsheet() {
+  const input = document.getElementById('gbFileInput');
+  if (!input.files[0]) return;
+  const statusEl = document.getElementById('gbImportStatus');
+  const btn      = document.getElementById('gbImportBtn');
+  statusEl.style.display = '';
+  statusEl.textContent   = '⏳ Sending to AIVM — this may take 30–60 seconds…';
+  btn.disabled = true;
+
+  const fd = new FormData();
+  fd.append('file', input.files[0]);
+
+  fetch(BACKEND + '/api/gb/import', { method:'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      if (data.error && (!data.orders || data.orders.length === 0)) {
+        statusEl.textContent = '❌ ' + data.error;
+        return;
+      }
+      _gbPendingImport = data.orders || [];
+      statusEl.textContent = `✅ AIVM found ${_gbPendingImport.length} order(s) in ${data.rows_scanned} rows (${data.source})`;
+
+      // Show preview table
+      const preview = document.getElementById('gbImportPreview');
+      document.getElementById('gbPreviewTitle').textContent = `Preview — ${_gbPendingImport.length} orders found`;
+      const tbl = document.getElementById('gbPreviewTable');
+      const cols = ['customer_name','items','manufacturer','total_amount','deposit_paid','expected_date','status'];
+      const hdrs = ['Customer','Items','Manufacturer','Total','Deposit','Expected','Status'];
+      tbl.innerHTML = `<tr style="background:var(--bg3)">${hdrs.map(h=>`<th style="padding:8px 12px;text-align:left;font-size:16px;font-weight:600;color:var(--text2)">${h}</th>`).join('')}</tr>`
+        + _gbPendingImport.map(o => `<tr style="border-top:1px solid var(--border)">${cols.map(c => {
+            let v = o[c] || '';
+            if (Array.isArray(v)) v = v.join(', ');
+            return `<td style="padding:8px 12px;font-size:16px;color:var(--text1);max-width:160px;word-break:break-word">${String(v).slice(0,80)}</td>`;
+          }).join('')}</tr>`).join('');
+      preview.style.display = '';
+    })
+    .catch(err => {
+      btn.disabled = false;
+      statusEl.textContent = '❌ Import failed: ' + err.message;
+    });
+}
+
+function saveImportedOrders() {
+  if (!_gbPendingImport.length) return;
+  const btn = document.getElementById('gbSaveImportBtn');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  fetch(BACKEND + '/api/gb/orders/save-import', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({orders: _gbPendingImport})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      toast('✅ ' + data.saved + ' orders saved to system!');
+      document.getElementById('gbImportPreview').style.display = 'none';
+      document.getElementById('gbImportStatus').textContent = '✅ ' + data.saved + ' orders saved.';
+      _gbPendingImport = [];
+      loadOrders();
+    } else {
+      btn.disabled = false;
+      btn.textContent = '✅ Save All to System';
+      toast('Save failed: ' + (data.error || 'unknown error'));
+    }
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.textContent = '✅ Save All to System';
+    toast('Save failed: ' + err.message);
+  });
+}
+
+function showAddOrderModal() {
+  ['mo-name','mo-phone','mo-mfr','mo-notes'].forEach(id => document.getElementById(id).value = '');
+  ['mo-items'].forEach(id => document.getElementById(id).value = '');
+  ['mo-total','mo-deposit'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('mo-date').value = '';
+  document.getElementById('mo-status').value = 'Ordered';
+  document.getElementById('gbModal').style.display = '';
+}
+
+function closeModal() {
+  document.getElementById('gbModal').style.display = 'none';
+}
+
+function saveNewOrder() {
+  const name  = document.getElementById('mo-name').value.trim();
+  const items = document.getElementById('mo-items').value.trim();
+  if (!name) { toast('Customer name is required'); return; }
+  if (!items) { toast('Please enter at least one item'); return; }
+
+  const order = {
+    customer_name: name,
+    phone:         document.getElementById('mo-phone').value.trim(),
+    items:         items.split('\n').map(s=>s.trim()).filter(Boolean),
+    manufacturer:  document.getElementById('mo-mfr').value.trim(),
+    total_amount:  parseFloat(document.getElementById('mo-total').value) || 0,
+    deposit_paid:  parseFloat(document.getElementById('mo-deposit').value) || 0,
+    expected_date: document.getElementById('mo-date').value || null,
+    status:        document.getElementById('mo-status').value,
+    notes:         document.getElementById('mo-notes').value.trim(),
+  };
+
+  fetch(BACKEND + '/api/gb/orders', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(order)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      closeModal();
+      toast('Order saved!');
+      loadOrders();
+    } else {
+      toast('Error saving: ' + (data.error || 'unknown'));
+    }
+  })
+  .catch(err => toast('Error: ' + err.message));
+}
+
+function getAttention() {
+  const btn    = document.getElementById('gb-attn-btn');
+  const result = document.getElementById('gb-attn-result');
+  btn.disabled = true;
+  btn.textContent = '⏳ Asking AIVM…';
+  result.style.display = 'none';
+
+  fetch(BACKEND + '/api/gb/attention')
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = '☀️ Refresh';
+      result.textContent = data.attention || 'No summary available.';
+      result.style.display = '';
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.textContent = '☀️ What needs attention today?';
+      toast('Could not get attention summary');
+    });
 }
 
 // ===== INIT =====
