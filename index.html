@@ -617,6 +617,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
             <div class="rtype-title">Outstanding Balances</div>
             <div class="rtype-desc">Customers with remaining balance due before delivery</div>
           </div>
+          <div class="rtype" id="gbrt-activity" onclick="gbReport('activity','')">
+            <div class="rtype-icon">📋</div>
+            <div class="rtype-title">Activity Log</div>
+            <div class="rtype-desc">Who did what and when — all employee actions</div>
+          </div>
         </div>
       </div>
 
@@ -980,6 +985,20 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div id="gbSheetsAnalysis" class="gb-sheet-analysis"></div>
       </div>
 
+      <!-- Customer Search -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:18px">
+        <div style="font-size:20px;font-weight:600;color:var(--text1);margin-bottom:10px">🔍 Customer Search</div>
+        <div style="font-size:18px;color:var(--text2);margin-bottom:12px">Type a last name or partial name to find a customer and see their full history.</div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <input type="text" id="gbSearchInput" placeholder="e.g. jones"
+            style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border2);color:var(--text1);padding:10px 16px;border-radius:8px;font-size:20px;outline:none"
+            onkeydown="if(event.key==='Enter')gbSearchCustomers()">
+          <button class="btn btn-blue" onclick="gbSearchCustomers()" style="font-size:18px;padding:10px 22px">Search →</button>
+        </div>
+        <div id="gbSearchResults" style="display:none"></div>
+        <div id="gbCustomerProfile" style="display:none"></div>
+      </div>
+
       <!-- Order Table -->
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden">
         <div id="gbOrdersLoading" style="padding:24px;text-align:center;font-size:18px;color:var(--text2)">Loading orders…</div>
@@ -997,6 +1016,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
                 <th style="padding:12px 14px;font-weight:600">Status</th>
                 <th style="padding:12px 14px;font-weight:600">Balance</th>
                 <th style="padding:12px 14px;font-weight:600">📎 Docs</th>
+                <th style="padding:12px 14px;font-weight:600"></th>
               </tr>
             </thead>
             <tbody id="gbOrderTableBody"></tbody>
@@ -1207,6 +1227,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
 </div>
 
+<!-- EMPLOYEE PICKER -->
+<div id="employeeModal" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.97);z-index:490;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:48px 40px;max-width:380px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
+    <div style="font-size:32px;margin-bottom:10px">👤</div>
+    <h2 style="color:#e6edf3;font-size:24px;font-weight:700;margin:0 0 8px">Who's working today?</h2>
+    <p style="color:#8b949e;font-size:18px;margin:0 0 28px">Select your name so we can track your activity</p>
+    <div id="employeeButtons" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+</div>
+
 <!-- PIN SCREEN -->
 <div id="pin-screen" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.97);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:0">
   <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:48px 40px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
@@ -1237,6 +1267,10 @@ let _gbOrders = [];
 let _gbPendingImport = [];
 let _onboardMsgs = [];
 window._bizProfile = null;
+const _GB_EMPLOYEES = ['David', 'JD'];
+function _getCurrentUser() {
+  return sessionStorage.getItem('lv_current_user') || 'Unknown';
+}
 
 const D = {
   gb: {
@@ -2033,7 +2067,7 @@ async function submitPin() {
       setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
       _lockToGBF();
       _dismissLanding();
-      setTimeout(() => checkBizProfile(), 600);
+      setTimeout(() => _showEmployeePicker(), 600);
     } else {
       document.getElementById('pin-error').style.display = 'block';
       document.getElementById('pin-input').value = '';
@@ -2235,9 +2269,13 @@ function renderOrderTable() {
       <td style="padding:12px 14px">
         <button class="gb-docs-btn" id="gbdocsbtn-${o.id}" onclick="gbToggleDocs(${o.id})">📎 Docs</button>
       </td>
+      <td style="padding:12px 14px">
+        <button onclick="deleteOrder(${o.id}, '${(o.customer_name||'').replace(/'/g,"\\'")}')"
+          style="background:rgba(248,81,73,0.1);color:var(--red);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer">🗑️</button>
+      </td>
     </tr>
     <tr id="gbdocsrow-${o.id}" style="display:none">
-      <td colspan="7" class="gb-docs-row" style="padding:0!important">
+      <td colspan="8" class="gb-docs-row" style="padding:0!important">
         <div class="gb-docs-panel" id="gbdocspanel-${o.id}">
           <div id="gbdocslist-${o.id}" style="margin-bottom:8px"><span style="color:var(--text3);font-size:17px">Loading…</span></div>
           <label class="gb-attach-btn">
@@ -2254,7 +2292,7 @@ function updateOrderStatus(orderId, newStatus) {
   fetch(BACKEND + '/api/gb/orders/' + orderId, {
     method: 'PUT',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({status: newStatus})
+    body: JSON.stringify({status: newStatus, user_name: _getCurrentUser()})
   })
   .then(r => r.json())
   .then(() => {
@@ -2264,6 +2302,27 @@ function updateOrderStatus(orderId, newStatus) {
     toast('Status updated: ' + newStatus);
   })
   .catch(() => toast('Could not save status change'));
+}
+
+function deleteOrder(orderId, customerName) {
+  if (!confirm('Delete order for ' + customerName + '? This cannot be undone.')) return;
+  fetch(BACKEND + '/api/gb/orders/' + orderId, {
+    method: 'DELETE',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({user_name: _getCurrentUser()})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      _gbOrders = _gbOrders.filter(o => o.id !== orderId);
+      renderOrderTable();
+      _gbUpdateDashboard();
+      toast('Order deleted');
+    } else {
+      toast('Delete failed: ' + (data.error || 'unknown'));
+    }
+  })
+  .catch(err => toast('Delete error: ' + err.message));
 }
 
 function handleFileSelect(input) {
@@ -2326,7 +2385,7 @@ function saveImportedOrders() {
   fetch(BACKEND + '/api/gb/orders/save-import', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({orders: _gbPendingImport})
+    body: JSON.stringify({orders: _gbPendingImport, user_name: _getCurrentUser()})
   })
   .then(r => r.json())
   .then(data => {
@@ -2380,6 +2439,7 @@ function saveNewOrder() {
     delivery_date: document.getElementById('mo-delivery').value || null,
     status:        document.getElementById('mo-status').value,
     notes:         document.getElementById('mo-notes').value.trim(),
+    user_name:     _getCurrentUser(),
   };
 
   fetch(BACKEND + '/api/gb/orders', {
@@ -2486,6 +2546,7 @@ function gbAttachDoc(orderId, input) {
 
   const fd = new FormData();
   fd.append('file', file);
+  fd.append('user_name', _getCurrentUser());
 
   fetch(BACKEND + '/api/gb/orders/' + orderId + '/docs', { method: 'POST', body: fd })
     .then(r => r.json())
@@ -2623,6 +2684,137 @@ function gbRestructureSheets(format) {
       if (csvBtn) csvBtn.disabled = false;
       statusEl.textContent = '❌ Failed: ' + err.message;
     });
+}
+
+// ===== CUSTOMER SEARCH =====
+
+async function gbSearchCustomers() {
+  const q = (document.getElementById('gbSearchInput').value || '').trim();
+  if (!q) { toast('Enter a name to search'); return; }
+  const resultsEl  = document.getElementById('gbSearchResults');
+  const profileEl  = document.getElementById('gbCustomerProfile');
+  resultsEl.style.display = '';
+  profileEl.style.display = 'none';
+  resultsEl.innerHTML = '<div style="padding:12px;font-size:17px;color:var(--text2)">⏳ Searching…</div>';
+
+  try {
+    const res  = await fetch(BACKEND + '/api/gb/search?q=' + encodeURIComponent(q));
+    const data = await res.json();
+    const list = data.customers || [];
+
+    if (!list.length) {
+      resultsEl.innerHTML = `<div style="padding:14px;font-size:18px;color:var(--text2)">No customers found matching <strong style="color:var(--text1)">${q}</strong>.</div>`;
+      return;
+    }
+
+    let html = `<div style="font-size:17px;color:var(--text2);margin-bottom:10px">${list.length} customer${list.length>1?'s':''} found</div>`;
+    html += list.map(c => {
+      const badge = c.has_pending
+        ? `<span style="background:rgba(88,166,255,0.15);color:var(--blue);padding:3px 8px;border-radius:4px;font-size:15px;font-weight:700">${c.order_count} order${c.order_count>1?'s':''}</span>`
+        : `<span style="background:rgba(63,185,80,0.15);color:var(--green);padding:3px 8px;border-radius:4px;font-size:15px;font-weight:700">All delivered</span>`;
+      return `<div onclick="gbLoadCustomerProfile('${c.name.replace(/'/g,"\\'")}', this)"
+        style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color 0.2s"
+        onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="flex:1">
+          <div style="font-size:19px;font-weight:700;color:var(--text1)">${c.name}</div>
+          <div style="font-size:16px;color:var(--text2);margin-top:2px">${c.phone || 'No phone on file'}</div>
+        </div>
+        ${badge}
+        <span style="color:var(--text3);font-size:20px">›</span>
+      </div>`;
+    }).join('');
+    resultsEl.innerHTML = html;
+  } catch(e) {
+    resultsEl.innerHTML = '<div style="padding:12px;font-size:17px;color:var(--red)">Search failed: ' + e.message + '</div>';
+  }
+}
+
+async function gbLoadCustomerProfile(name, clickedEl) {
+  if (clickedEl) {
+    document.querySelectorAll('#gbSearchResults > div > div[onclick]').forEach(el => {
+      el.style.borderColor = 'var(--border)';
+      el.style.background  = 'var(--bg3)';
+    });
+    clickedEl.style.borderColor = 'var(--blue)';
+    clickedEl.style.background  = 'rgba(88,166,255,0.08)';
+  }
+
+  const profileEl = document.getElementById('gbCustomerProfile');
+  profileEl.style.display = '';
+  profileEl.innerHTML = '<div style="padding:16px;font-size:17px;color:var(--text2)">⏳ Loading profile…</div>';
+
+  try {
+    const res  = await fetch(BACKEND + '/api/gb/customers?name=' + encodeURIComponent(name));
+    const data = await res.json();
+
+    const statusColor = s => {
+      if (s === 'Delivered' || s === 'Paid') return 'var(--green)';
+      if (s === 'Ordered' || s === 'In Transit') return 'var(--blue)';
+      return 'var(--yellow)';
+    };
+
+    const etaRow = o => {
+      if (!o.expected_date) return '';
+      const today = new Date().toISOString().split('T')[0];
+      const overdue = o.expected_date < today && !['Delivered','Paid'].includes(o.status);
+      return `<span style="font-size:15px;${overdue ? 'color:var(--red);font-weight:700' : 'color:var(--text2)'}">
+        ${overdue ? '⚠️ ' : '📅 '}ETA: ${o.expected_date}${overdue ? ' (overdue)' : ''}
+      </span>`;
+    };
+
+    const pendingRows = (data.pending || []).map(o => `
+      <div style="background:var(--bg2);border:1px solid rgba(88,166,255,0.3);border-radius:8px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <div style="font-size:17px;color:var(--text1);font-weight:600">${Array.isArray(o.items) ? o.items.join(', ') : (o.items||'—')}</div>
+            <div style="font-size:15px;color:var(--text2);margin-top:2px">${o.manufacturer ? '🏭 ' + o.manufacturer : ''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;text-align:right">
+            <span style="background:rgba(88,166,255,0.15);color:${statusColor(o.status)};padding:3px 8px;border-radius:4px;font-size:15px;font-weight:700">${o.status}</span>
+            ${etaRow(o)}
+            ${o.doc_count > 0 ? `<a href="${BACKEND}/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 ${o.doc_count} doc${o.doc_count>1?'s':''}</a>` : ''}
+          </div>
+        </div>
+        ${o.notes ? `<div style="font-size:15px;color:var(--text3);margin-top:6px;font-style:italic">${o.notes}</div>` : ''}
+      </div>`).join('');
+
+    const deliveredRows = (data.delivered || []).map(o => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;font-size:16px;color:var(--text2)">${Array.isArray(o.items) ? o.items.join(', ') : (o.items||'—')}</div>
+        <span style="color:var(--green);font-size:15px;font-weight:700">✅ ${o.status}</span>
+        ${o.doc_count > 0 ? `<a href="${BACKEND}/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 docs</a>` : ''}
+      </div>`).join('');
+
+    const balColor = data.balance_due > 0 ? 'var(--yellow)' : 'var(--green)';
+
+    let html = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px 20px 16px;margin-top:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:var(--text1)">${data.name}</div>
+          <div style="font-size:17px;color:var(--text2);margin-top:2px">${data.phone || 'No phone on file'}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:17px;color:var(--text2)">${data.order_count} total order${data.order_count!==1?'s':''}</div>
+          <div style="font-size:17px;font-weight:700;color:${balColor}">Balance due: $${data.balance_due.toFixed(2)}</div>
+        </div>
+      </div>`;
+
+    if (data.pending && data.pending.length) {
+      html += `<div style="font-size:17px;font-weight:700;color:var(--text1);margin-bottom:8px">⏳ Pending Orders (${data.pending.length})</div>`;
+      html += pendingRows;
+    }
+
+    if (data.delivered && data.delivered.length) {
+      html += `<div style="font-size:17px;font-weight:700;color:var(--text1);margin:14px 0 8px">✅ Delivery History (${data.delivered.length})</div>`;
+      html += deliveredRows;
+    }
+
+    html += '</div>';
+    profileEl.innerHTML = html;
+
+  } catch(e) {
+    profileEl.innerHTML = '<div style="padding:12px;font-size:17px;color:var(--red)">Could not load profile: ' + e.message + '</div>';
+  }
 }
 
 // ===== DELIVERY CALENDAR =====
@@ -3102,6 +3294,7 @@ function closeSidebar() {
 let _gbCurrentReport = null;
 
 function gbReport(type, period) {
+  if (type === 'activity') { gbReportActivity(); return; }
   period = period || '';
   if (!_gbOrders || _gbOrders.length === 0) {
     document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⏳</div><div>Loading order data…</div></div>';
@@ -3350,6 +3543,67 @@ function _gbrBalance() {
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>`;
+}
+
+// ── ACTIVITY LOG REPORT ──
+async function gbReportActivity() {
+  document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
+  const card = document.getElementById('gbrt-activity');
+  if (card) card.classList.add('sel');
+  _gbCurrentReport = null;
+  document.getElementById('gbr-print-btn').style.display = 'none';
+  document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⏳</div><div>Loading activity log…</div></div>';
+  try {
+    const res  = await fetch(BACKEND + '/api/gb/activity?limit=200');
+    const data = await res.json();
+    const log  = data.log || [];
+    if (!log.length) {
+      document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>📋</div><div>No activity recorded yet</div></div>';
+      return;
+    }
+    let html = `<h3 style="font-size:22px;font-weight:800;margin-bottom:16px">📋 Activity Log — ${data.total} entries</h3>`;
+    html += `<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input id="activityFilter" type="text" placeholder="Filter by name or action…" oninput="_gbActivityFilter()"
+        style="flex:1;min-width:200px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:8px;font-size:17px">
+    </div>`;
+    html += _gbRenderActivityTable(log);
+    document.getElementById('reportOutput').innerHTML = html;
+  } catch(e) {
+    document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⚠️</div><div>Could not load activity log</div></div>';
+  }
+}
+function _gbActivityFilter() {
+  const q = (document.getElementById('activityFilter').value || '').trim().toLowerCase();
+  const rows = document.querySelectorAll('#activityLogTable tbody tr');
+  rows.forEach(tr => {
+    tr.style.display = q && !tr.textContent.toLowerCase().includes(q) ? 'none' : '';
+  });
+}
+function _gbRenderActivityTable(log) {
+  const rows = log.map(r => `<tr style="border-bottom:1px solid var(--border)">
+    <td style="padding:10px 8px;color:var(--text2);white-space:nowrap;font-size:16px">${_gbFormatTs(r.created_at)}</td>
+    <td style="padding:10px 8px;font-weight:700;color:var(--blue)">${r.user_name || '—'}</td>
+    <td style="padding:10px 8px;color:var(--text1)">${r.action || ''}</td>
+    <td style="padding:10px 8px;color:var(--text2)">${r.target || ''}</td>
+    <td style="padding:10px 8px;color:var(--text3);font-size:16px">${r.details || ''}</td>
+  </tr>`).join('');
+  return `<div style="overflow-x:auto"><table id="activityLogTable" style="width:100%;border-collapse:collapse;font-size:17px">
+    <thead><tr style="border-bottom:2px solid var(--border)">
+      <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">When</th>
+      <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Who</th>
+      <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Action</th>
+      <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Target</th>
+      <th style="text-align:left;padding:10px 8px;color:var(--text2);font-weight:600">Details</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+function _gbFormatTs(ts) {
+  if (!ts) return '—';
+  try {
+    const d = new Date(ts.replace(' ','T') + (ts.includes('Z') ? '' : 'Z'));
+    return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true});
+  } catch(e) { return ts; }
 }
 
 // ── PRINT GBF REPORT ──
@@ -3644,6 +3898,25 @@ async function docRemoveFolder(id) {
     await docScanFolders();
   }
   toast('Folder removed');
+}
+
+// ===== EMPLOYEE PICKER =====
+
+function _showEmployeePicker() {
+  if (sessionStorage.getItem('lv_current_user')) { checkBizProfile(); return; }
+  const modal = document.getElementById('employeeModal');
+  const btns  = document.getElementById('employeeButtons');
+  btns.innerHTML = _GB_EMPLOYEES.map(name =>
+    `<button onclick="_setEmployee('${name}')" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:16px;font-size:20px;font-weight:700;cursor:pointer">${name}</button>`
+  ).join('');
+  modal.style.display = 'flex';
+}
+function _setEmployee(name) {
+  sessionStorage.setItem('lv_current_user', name);
+  const modal = document.getElementById('employeeModal');
+  modal.style.transition = 'opacity 0.3s ease';
+  modal.style.opacity = '0';
+  setTimeout(() => { modal.style.display = 'none'; modal.style.opacity = '1'; checkBizProfile(); }, 320);
 }
 
 // ===== AIVM BUSINESS ONBOARDING =====
