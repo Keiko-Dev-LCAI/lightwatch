@@ -2562,7 +2562,7 @@ function importSpreadsheetStep1() {
       rowsEl.appendChild(document.createElement('div'));
       rowsEl.appendChild(mkLabel('Means…'));
 
-      headers.forEach(h => {
+      headers.forEach((h, idx) => {
         // Left: column name box
         const left = document.createElement('div');
         left.style.cssText = 'background:var(--card);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-size:18px;color:var(--text1);word-break:break-all';
@@ -2573,22 +2573,40 @@ function importSpreadsheetStep1() {
         mid.style.cssText = 'text-align:center;font-size:20px;color:var(--text3)';
         mid.textContent = '→';
 
-        // Right: dropdown
-        const sel = document.createElement('select');
-        sel.dataset.col = h;
-        sel.style.cssText = 'width:100%;background:var(--card);border:1px solid var(--border2);color:var(--text1);padding:8px 12px;border-radius:6px;font-size:18px;cursor:pointer;outline:none';
+        // Right: text input + datalist for autocomplete
+        const dlId = `gbDL${idx}`;
+        const dl = document.createElement('datalist');
+        dl.id = dlId;
+        // Add all known field labels (skip the blank/skip entry — blank input covers that)
         Object.entries(GB_FIELD_LABELS).forEach(([val, label]) => {
+          if (!val) return;
           const opt = document.createElement('option');
-          opt.value = val; opt.textContent = label;
-          sel.appendChild(opt);
+          opt.value = label;
+          dl.appendChild(opt);
         });
+        // Also offer the original column name as an option (keep-as-is)
+        const origOpt = document.createElement('option');
+        origOpt.value = h;
+        dl.appendChild(origOpt);
+
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.dataset.col = h;
+        inp.setAttribute('list', dlId);
+        inp.placeholder = 'type field name or leave blank to skip';
+        inp.style.cssText = 'width:100%;background:var(--card);border:1px solid var(--border2);color:var(--text1);padding:8px 12px;border-radius:6px;font-size:18px;outline:none;box-sizing:border-box';
+
         // Auto-guess based on column header name
         const guess = _gbGuessField(h);
-        if (guess) sel.value = guess;
+        if (guess) inp.value = GB_FIELD_LABELS[guess] || guess;
+
+        const right = document.createElement('div');
+        right.appendChild(dl);
+        right.appendChild(inp);
 
         rowsEl.appendChild(left);
         rowsEl.appendChild(mid);
-        rowsEl.appendChild(sel);
+        rowsEl.appendChild(right);
       });
 
       document.getElementById('gbColMapPanel').style.display = '';
@@ -2603,14 +2621,28 @@ function importSpreadsheetStep1() {
 function importSpreadsheetStep2() {
   if (!_gbPreviewFile) return;
 
-  // Read all dropdowns → build column_map  {fieldName: "SpreadsheetColumnName"}
-  const selects    = document.querySelectorAll('#gbColMapRows select');
+  // Read all inputs → build column_map  {fieldKey: "SpreadsheetColumnName"}
+  // Blank = skip; known label/key → mapped field; free-form → notes_append:Name
+  const _gbLabelToKey = {};
+  Object.entries(GB_FIELD_LABELS).forEach(([k, v]) => { if (k) _gbLabelToKey[v] = k; });
+
+  const inputs     = document.querySelectorAll('#gbColMapRows input[data-col]');
   const colMap     = {};
   const usedFields = new Set();
-  selects.forEach(sel => {
-    if (sel.value && !usedFields.has(sel.value)) {
-      colMap[sel.value] = sel.dataset.col;
-      usedFields.add(sel.value);
+  inputs.forEach(inp => {
+    const rawVal = inp.value.trim();
+    if (!rawVal) return; // blank = skip this column
+    let fieldKey;
+    if (Object.prototype.hasOwnProperty.call(GB_FIELD_LABELS, rawVal)) {
+      fieldKey = rawVal;                    // typed the raw field key (e.g. "customer_name")
+    } else if (_gbLabelToKey[rawVal]) {
+      fieldKey = _gbLabelToKey[rawVal];    // typed/selected a human-readable label
+    } else {
+      fieldKey = 'notes_append:' + rawVal; // free-form → append as "Name: Value" in Notes
+    }
+    if (!usedFields.has(fieldKey)) {
+      colMap[fieldKey] = inp.dataset.col;
+      usedFields.add(fieldKey);
     }
   });
 
