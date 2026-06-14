@@ -251,6 +251,140 @@ tr:hover td{background:rgba(255,255,255,.02)}
 </head>
 <body>
 
+<!-- ===== LANDING PAGE ===== -->
+<div id="landing" style="position:fixed;inset:0;background:#0d1117;overflow-y:auto;z-index:200;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#e6edf3;">
+
+  <!-- Nav -->
+  <nav style="position:sticky;top:0;background:rgba(13,17,23,0.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid #21262d;padding:0 40px;height:64px;display:flex;align-items:center;justify-content:space-between;z-index:10;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px;font-size:22px;font-weight:800;color:#58a6ff">
+      <div style="width:34px;height:34px;background:linear-gradient(135deg,#58a6ff,#bc8cff);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">⚡</div>
+      LightView
+    </div>
+    <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:18px;font-weight:700;cursor:pointer">Enter Demo →</button>
+  </nav>
+
+  <!-- Hero -->
+  <div style="max-width:900px;margin:0 auto;padding:80px 40px 60px;text-align:center">
+    <div style="display:inline-block;background:rgba(88,166,255,0.1);border:1px solid rgba(88,166,255,0.3);border-radius:20px;padding:6px 18px;font-size:18px;color:#58a6ff;margin-bottom:24px">⚡ AI Monitoring + Blockchain Verification</div>
+    <h1 style="font-size:clamp(36px,5vw,54px);font-weight:900;line-height:1.1;margin-bottom:20px;color:#e6edf3">Every business. Any size.<br><span style="background:linear-gradient(135deg,#58a6ff,#bc8cff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">One monitoring layer.</span></h1>
+    <p style="font-size:20px;color:#8b949e;line-height:1.7;max-width:620px;margin:0 auto 40px">LightView adds AI monitoring and blockchain verification on top of whatever software you already use — without replacing anything.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-bottom:24px">
+      <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:10px;padding:16px 32px;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 4px 24px rgba(88,166,255,0.25)">See Live Demo →</button>
+      <button onclick="document.getElementById('lv-contact').scrollIntoView({behavior:'smooth'})" style="background:transparent;border:1px solid #30363d;color:#e6edf3;border-radius:10px;padding:16px 32px;font-size:20px;font-weight:700;cursor:pointer">Request a Demo</button>
+    </div>
+    <div style="color:#656d76;font-size:18px">3 live demo companies • No signup required • See real data updates</div>
+  </div>
+
+  <!-- 3 Features -->
+  <div style="max-width:900px;margin:0 auto;padding:0 40px 60px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px">
+    <div style="background:#161b22;border:1px solid #21262d;border-radius:14px;padding:28px">
+      <div style="font-size:34px;margin-bottom:12px">⚡</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:10px">AIVM Monitoring</div>
+      <div style="font-size:18px;color:#8b949e;line-height:1.6">Write rules in plain English. AIVM watches your data 24/7 and alerts you the moment something goes off — before it becomes a problem.</div>
+    </div>
+    <div style="background:#161b22;border:1px solid #21262d;border-radius:14px;padding:28px">
+      <div style="font-size:34px;margin-bottom:12px">🔗</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:10px">Blockchain Audit Trail</div>
+      <div style="font-size:18px;color:#8b949e;line-height:1.6">Every alert, scan, and rule change is written to Lightchain — tamper-proof timestamps that banks, regulators, and auditors can independently verify.</div>
+    </div>
+    <div style="background:#161b22;border:1px solid #21262d;border-radius:14px;padding:28px">
+      <div style="font-size:34px;margin-bottom:12px">📊</div>
+      <div style="font-size:20px;font-weight:800;margin-bottom:10px">One-Click Reports</div>
+      <div style="font-size:18px;color:#8b949e;line-height:1.6">Bank, regulator, auditor, executive — same data, right format. AI generates the correct presentation automatically for whoever is asking.</div>
+    </div>
+  </div>
+
+  <!-- TPMS Analogy -->
+  <div style="background:#13181f;border-top:1px solid #21262d;border-bottom:1px solid #21262d;padding:56px 40px;margin-bottom:60px">
+    <div style="max-width:720px;margin:0 auto;display:flex;gap:24px;align-items:flex-start">
+      <div style="font-size:48px;flex-shrink:0">🚗</div>
+      <div>
+        <div style="font-size:24px;font-weight:800;margin-bottom:14px">Think of it like TPMS — tire pressure sensors</div>
+        <div style="font-size:18px;color:#8b949e;line-height:1.8">When your low-pressure light comes on, it didn't rebuild your wheels. A small sensor monitors what's already there and alerts you when something's off. <strong style="color:#e6edf3">LightView is that sensor for your business. We don't replace your software. We don't change how you work. We add a monitoring layer on top.</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Industries -->
+  <div style="max-width:900px;margin:0 auto;padding:0 40px 60px">
+    <div style="text-align:center;font-size:18px;font-weight:700;color:#656d76;text-transform:uppercase;letter-spacing:.5px;margin-bottom:32px">Works for any industry</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px">
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">🏭</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Manufacturing</div><div style="font-size:18px;color:#8b949e">Parts, lines, suppliers</div></div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">🍽️</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Food &amp; Beverage</div><div style="font-size:18px;color:#8b949e">Temps, freshness, compliance</div></div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">🏢</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Real Estate</div><div style="font-size:18px;color:#8b949e">Rent, leases, maintenance</div></div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">📦</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Logistics</div><div style="font-size:18px;color:#8b949e">Shipments, carriers</div></div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">🏥</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Healthcare</div><div style="font-size:18px;color:#8b949e">Devices, audits</div></div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:12px;padding:22px 16px;text-align:center"><div style="font-size:30px;margin-bottom:8px">👔</div><div style="font-size:18px;font-weight:700;margin-bottom:4px">Any Business</div><div style="font-size:18px;color:#8b949e">If it moves or tracks things</div></div>
+    </div>
+  </div>
+
+  <!-- 3 Steps -->
+  <div style="background:#13181f;border-top:1px solid #21262d;border-bottom:1px solid #21262d;padding:60px 40px;margin-bottom:60px">
+    <div style="max-width:900px;margin:0 auto">
+      <div style="text-align:center;font-size:18px;font-weight:700;color:#656d76;text-transform:uppercase;letter-spacing:.5px;margin-bottom:40px">How it works — 3 steps</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:32px">
+        <div style="text-align:center">
+          <div style="width:56px;height:56px;background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#3fb950;margin:0 auto 18px">1</div>
+          <div style="font-size:20px;font-weight:800;margin-bottom:10px">Connect your systems</div>
+          <div style="font-size:18px;color:#8b949e;line-height:1.6">LightView plugs into your existing software — factory floor, warehouse scanners, QuickBooks, or your own APIs. Nothing changes for your team.</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:56px;height:56px;background:rgba(88,166,255,.15);border:1px solid rgba(88,166,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#58a6ff;margin:0 auto 18px">2</div>
+          <div style="font-size:20px;font-weight:800;margin-bottom:10px">Write your rules</div>
+          <div style="font-size:18px;color:#8b949e;line-height:1.6">Tell AIVM what to watch for in plain English: "Alert me if the cooler goes above 41°F." No code. No config files. Just your rules.</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:56px;height:56px;background:rgba(188,140,255,.15);border:1px solid rgba(188,140,255,.3);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#bc8cff;margin:0 auto 18px">3</div>
+          <div style="font-size:20px;font-weight:800;margin-bottom:10px">Get alerts and proof</div>
+          <div style="font-size:18px;color:#8b949e;line-height:1.6">Alerts appear the moment something's off. Every event goes on the blockchain automatically — instant tamper-proof proof for anyone who asks.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Why Blockchain -->
+  <div style="max-width:900px;margin:0 auto;padding:0 40px 60px">
+    <div style="background:rgba(188,140,255,.06);border:1px solid rgba(188,140,255,.2);border-radius:16px;padding:36px;display:flex;gap:22px;align-items:flex-start">
+      <div style="font-size:44px;flex-shrink:0">🔒</div>
+      <div>
+        <div style="font-size:24px;font-weight:800;margin-bottom:14px;color:#bc8cff">Why does the blockchain part matter?</div>
+        <div style="font-size:18px;color:#8b949e;line-height:1.8">A spreadsheet says whatever you want it to say. An email timestamp can be faked. Even your own internal systems can be edited after the fact — and everyone knows it.<br><br>A blockchain timestamp can't. When LightView writes a record to Lightchain, it's sealed forever. <strong style="color:#e6edf3">If your cooler failed at 12:03 PM, that record exists permanently — you didn't decide to write it after the inspector showed up. That's the difference between "we have a record" and "we have proof."</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Request Demo Form -->
+  <div id="lv-contact" style="background:#13181f;border-top:1px solid #21262d;padding:64px 40px">
+    <div style="max-width:580px;margin:0 auto;text-align:center">
+      <div style="font-size:34px;font-weight:900;margin-bottom:14px">Request a Demo</div>
+      <div style="font-size:18px;color:#8b949e;margin-bottom:36px;line-height:1.6">Tell us about your business and we'll set up a personalized walkthrough tailored to your industry.</div>
+      <div id="lv-form">
+        <input id="lv-company" type="text" placeholder="Company name" maxlength="200" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:14px;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"/>
+        <input id="lv-industry" type="text" placeholder="Industry (e.g. Manufacturing, Healthcare, Restaurant)" maxlength="100" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:14px;box-sizing:border-box;font-family:inherit" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"/>
+        <textarea id="lv-usecase" placeholder="What are you trying to monitor or track? (optional)" rows="4" maxlength="500" style="width:100%;background:#161b22;border:1px solid #30363d;color:#e6edf3;padding:14px 18px;border-radius:10px;font-size:18px;outline:none;margin-bottom:20px;box-sizing:border-box;resize:vertical;font-family:inherit;line-height:1.5" onfocus="this.style.borderColor='#58a6ff'" onblur="this.style.borderColor='#30363d'"></textarea>
+        <button onclick="requestDemo()" style="width:100%;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:10px;padding:16px;font-size:20px;font-weight:700;cursor:pointer">Send Request →</button>
+      </div>
+      <div id="lv-success" style="display:none;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:12px;padding:32px">
+        <div style="font-size:34px;margin-bottom:12px">✅</div>
+        <div style="font-size:20px;font-weight:700;margin-bottom:10px;color:#3fb950">Request received!</div>
+        <div style="font-size:18px;color:#8b949e;margin-bottom:20px;line-height:1.6">We'll be in touch to schedule your personalized demo.</div>
+        <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:12px 24px;font-size:18px;font-weight:700;cursor:pointer">Explore the demo now →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="background:#0d1117;border-top:1px solid #21262d;padding:24px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+    <div style="display:flex;align-items:center;gap:10px;font-size:19px;font-weight:800;color:#58a6ff">
+      <div style="width:28px;height:28px;background:linear-gradient(135deg,#58a6ff,#bc8cff);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff">⚡</div>
+      LightView
+    </div>
+    <div style="color:#656d76;font-size:18px">Powered by Lightchain AIVM • Tamper-proof blockchain audit trail</div>
+    <button onclick="enterDemo()" style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:18px;font-weight:700;cursor:pointer">Enter Demo →</button>
+  </div>
+
+</div><!-- /landing -->
+
 <!-- TOP BAR -->
 <div class="topbar">
   <div class="logo">
@@ -321,6 +455,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="live-badge"><div class="live-dot"></div> Live</div>
       </div>
       <div class="stats-row" id="statsRow"></div>
+
+      <!-- AIVM Analysis Bar -->
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div>
+          <span style="font-size:18px;font-weight:700;color:#bc8cff">⚡ AIVM Analysis</span>
+          <span style="font-size:18px;color:#8b949e;margin-left:12px">Interpret current data and get recommended actions</span>
+        </div>
+        <button class="btn" id="aivm-btn" onclick="analyzeWithAIVM()" style="background:linear-gradient(135deg,#bc8cff,#58a6ff);color:#000;font-weight:700;padding:10px 20px;font-size:18px">Analyze with AIVM →</button>
+      </div>
+      <div id="aivm-analysis" style="display:none;background:#161b22;border:1px solid rgba(188,140,255,.3);border-left:4px solid #bc8cff;border-radius:10px;padding:22px 26px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+          <span style="font-size:19px;font-weight:700;color:#bc8cff">⚡ AIVM Analysis</span>
+          <span id="aivm-badge" style="display:none;background:rgba(188,140,255,.15);color:#bc8cff;border:1px solid rgba(188,140,255,.3);border-radius:6px;padding:3px 10px;font-size:18px;font-weight:700">✨ AIVM Generated</span>
+          <span id="aivm-badge-demo" style="display:none;background:rgba(88,166,255,.12);color:#58a6ff;border:1px solid rgba(88,166,255,.3);border-radius:6px;padding:3px 10px;font-size:18px;font-weight:700">Demo Data</span>
+        </div>
+        <div id="aivm-content" style="font-size:18px;color:#e6edf3;line-height:1.7"></div>
+      </div>
+
       <div class="table-wrap">
         <div class="table-head">
           <h3>Live Data Stream</h3>
@@ -985,6 +1137,9 @@ function switchEntity(val) {
   current = val;
   acknowledgedAlerts = {};
   selectedReport = null;
+  document.getElementById('aivm-analysis').style.display = 'none';
+  document.getElementById('aivm-btn').textContent = 'Analyze with AIVM →';
+  document.getElementById('aivm-btn').disabled = false;
   renderAll();
   showSection(currentSection);
   toast('Switched to ' + D[current].name);
@@ -1332,6 +1487,93 @@ function updateQBPanel() {
       })
       .catch(() => {});
   }
+}
+
+// ===== LANDING =====
+function enterDemo() {
+  const landing = document.getElementById('landing');
+  landing.style.transition = 'opacity 0.4s ease';
+  landing.style.opacity = '0';
+  setTimeout(() => { landing.remove(); }, 420);
+}
+
+function requestDemo() {
+  const company = (document.getElementById('lv-company').value || '').trim();
+  if (!company) {
+    const inp = document.getElementById('lv-company');
+    inp.style.borderColor = '#f85149';
+    inp.focus();
+    setTimeout(() => { inp.style.borderColor = '#30363d'; }, 2000);
+    return;
+  }
+  const industry = (document.getElementById('lv-industry').value || '').trim();
+  const useCase  = (document.getElementById('lv-usecase').value  || '').trim();
+  fetch(BACKEND + '/api/contact', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({company, industry, use_case: useCase})
+  }).catch(() => {});
+  document.getElementById('lv-form').style.display = 'none';
+  document.getElementById('lv-success').style.display = '';
+}
+
+// ===== AIVM DASHBOARD ANALYSIS =====
+function analyzeWithAIVM() {
+  const btn    = document.getElementById('aivm-btn');
+  const panel  = document.getElementById('aivm-analysis');
+  const cont   = document.getElementById('aivm-content');
+  const badge  = document.getElementById('aivm-badge');
+  const badgeD = document.getElementById('aivm-badge-demo');
+
+  btn.disabled = true;
+  btn.textContent = '⟳ Analyzing…';
+  panel.style.display = 'block';
+  badge.style.display = 'none';
+  badgeD.style.display = 'none';
+  cont.innerHTML = '<div style="display:flex;align-items:center;gap:14px"><div style="width:24px;height:24px;border:2px solid rgba(188,140,255,.3);border-top-color:#bc8cff;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0"></div><span style="color:#8b949e;font-size:18px">Sending to AIVM…</span></div>';
+
+  const e = D[current];
+  const payload = {
+    company:  e.name,
+    industry: e.industry,
+    monitors: e.monitors.map(m => ({name: m.label, value: String(m.val) + (m.unit ? ' ' + m.unit : ''), unit: m.unit, status: m.status, threshold: m.target})),
+    alerts:   e.alerts.filter(a => !acknowledgedAlerts[a.id]).map(a => ({title: a.title, severity: a.sev, triggered_value: a.baseline, threshold: a.rule})),
+    rules:    e.rules.map(r => r.text)
+  };
+
+  fetch(BACKEND + '/api/analyze', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.analysis) throw new Error('no data');
+    const paras = data.analysis.split('\n').filter(p => p.trim());
+    cont.innerHTML = paras.map(p => '<p style="margin-bottom:12px">' + p + '</p>').join('');
+    if (data.source === 'AIVM' && !data.error) {
+      badge.style.display = '';
+    } else {
+      badgeD.style.display = '';
+    }
+  })
+  .catch(() => {
+    const active = e.alerts.filter(a => !acknowledgedAlerts[a.id]);
+    let txt = 'Operations summary for ' + e.name + ': ';
+    if (active.length === 0) {
+      txt += 'All monitors within normal parameters. No immediate actions required.';
+    } else {
+      txt += active.length + ' active alert' + (active.length > 1 ? 's' : '') + ' require attention. ';
+      txt += 'Top priority: ' + active[0].title + '. ';
+      txt += 'Acknowledge alerts you have addressed to keep the audit trail current.';
+    }
+    cont.innerHTML = '<p>' + txt + '</p>';
+    badgeD.style.display = '';
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = '⟳ Refresh Analysis';
+  });
 }
 
 // ===== INIT =====
