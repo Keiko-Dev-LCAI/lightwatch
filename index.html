@@ -926,7 +926,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
       <!-- AIVM Attention Panel -->
       <div class="aivm-bar" id="gb-attention-bar" style="margin-bottom:18px">
-        <button class="aivm-btn" id="gb-attn-btn" onclick="getAttention()">☀️ What needs attention today?</button>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <button class="aivm-btn" id="gb-attn-btn" onclick="getAttention()">☀️ What needs attention today?</button>
+          <button id="gb-reconfig-btn" onclick="_bizReconfigure()" style="display:none;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:16px;padding:6px 14px;cursor:pointer">⚙️ Reconfigure setup</button>
+        </div>
         <div id="gb-attn-result" style="display:none;margin-top:10px;white-space:pre-line;font-size:18px;line-height:1.6;color:var(--text1)"></div>
       </div>
 
@@ -1174,6 +1177,36 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- BIZ ONBOARDING MODAL -->
+<div id="bizOnboardingModal" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.98);z-index:600;flex-direction:column;align-items:center;justify-content:center">
+  <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:32px 28px;max-width:560px;width:94%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 50px rgba(0,0,0,0.7)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <div style="font-size:28px">✨</div>
+      <div>
+        <div style="font-size:22px;font-weight:700;color:#e6edf3">LightView Setup</div>
+        <div style="font-size:16px;color:#8b949e">Quick 2-minute conversation to personalise your dashboard</div>
+      </div>
+    </div>
+    <!-- Chat messages -->
+    <div id="onboardChat" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:180px;max-height:340px;padding:4px 0"></div>
+    <!-- Typing input -->
+    <div id="onboardInputRow" style="display:flex;gap:10px;margin-top:16px">
+      <input id="onboardInput" type="text" placeholder="Type your answer..."
+        style="flex:1;background:#0d1117;border:2px solid #30363d;border-radius:8px;color:#e6edf3;font-size:18px;padding:12px 14px;outline:none"
+        onkeydown="if(event.key==='Enter')sendOnboardMsg()">
+      <button onclick="sendOnboardMsg()"
+        style="background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:12px 20px;font-size:18px;font-weight:700;cursor:pointer;white-space:nowrap">
+        Send →
+      </button>
+    </div>
+    <div id="onboardSpinner" style="display:none;text-align:center;color:#8b949e;font-size:17px;margin-top:10px">Thinking…</div>
+    <!-- Skip link -->
+    <div style="text-align:center;margin-top:14px">
+      <a href="#" onclick="_onboardSkip();return false;" style="color:#58a6ff;font-size:16px;text-decoration:none">Skip for now — set this up later</a>
+    </div>
+  </div>
+</div>
+
 <!-- PIN SCREEN -->
 <div id="pin-screen" style="display:none;position:fixed;inset:0;background:rgba(13,17,23,0.97);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:0">
   <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:48px 40px;max-width:400px;width:90%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.6)">
@@ -1202,6 +1235,8 @@ const BACKEND = 'https://web-production-c7177.up.railway.app';
 // GB state
 let _gbOrders = [];
 let _gbPendingImport = [];
+let _onboardMsgs = [];
+window._bizProfile = null;
 
 const D = {
   gb: {
@@ -1998,6 +2033,7 @@ async function submitPin() {
       setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
       _lockToGBF();
       _dismissLanding();
+      setTimeout(() => checkBizProfile(), 600);
     } else {
       document.getElementById('pin-error').style.display = 'block';
       document.getElementById('pin-input').value = '';
@@ -3609,6 +3645,170 @@ async function docRemoveFolder(id) {
   }
   toast('Folder removed');
 }
+
+// ===== AIVM BUSINESS ONBOARDING =====
+
+async function checkBizProfile() {
+  // If already completed this session, skip
+  if (localStorage.getItem('lv_onboarded_gb') === '1') {
+    // Still apply the stored profile to show reconfigure button
+    try {
+      const r = await fetch(BACKEND + '/api/biz/profile?company=GB');
+      const d = await r.json();
+      if (d.profile) _applyBizProfile(d.profile);
+    } catch(e) {}
+    return;
+  }
+  try {
+    const r = await fetch(BACKEND + '/api/biz/profile?company=GB');
+    const d = await r.json();
+    if (d.profile) {
+      // Profile exists — apply and mark done
+      localStorage.setItem('lv_onboarded_gb', '1');
+      _applyBizProfile(d.profile);
+    } else {
+      // No profile yet — start onboarding
+      _startOnboarding();
+    }
+  } catch(e) {
+    console.log('[onboarding] profile check failed:', e);
+    // Silently skip on error — don't block the app
+  }
+}
+
+async function _startOnboarding() {
+  _onboardMsgs = [];
+  const modal = document.getElementById('bizOnboardingModal');
+  const chat  = document.getElementById('onboardChat');
+  chat.innerHTML = '';
+  modal.style.display = 'flex';
+  document.getElementById('onboardInput').disabled = true;
+  document.getElementById('onboardSpinner').style.display = 'block';
+
+  // Get opening message from backend
+  try {
+    const r = await fetch(BACKEND + '/api/biz/onboard', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        company: 'GB',
+        messages: [{role:'user', content:'__INIT__'}]
+      })
+    });
+    const d = await r.json();
+    const opening = d.reply || "Hi! Tell me a little about your business — what do you do, and what's the hardest part of your day to keep track of?";
+    _appendOnboardMsg('assistant', opening);
+    _onboardMsgs.push({role:'assistant', content: opening});
+    if (d.done && d.profile) { _onboardFinish(d.profile); return; }
+  } catch(e) {
+    // Fallback opening if backend is down
+    const opening = "Hi! Tell me a little about your business — what do you do, and what's the hardest part of your day to keep track of?";
+    _appendOnboardMsg('assistant', opening);
+    _onboardMsgs.push({role:'assistant', content: opening});
+  }
+
+  document.getElementById('onboardSpinner').style.display = 'none';
+  document.getElementById('onboardInput').disabled = false;
+  document.getElementById('onboardInput').focus();
+}
+
+async function sendOnboardMsg() {
+  const input = document.getElementById('onboardInput');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.disabled = true;
+  _appendOnboardMsg('user', text);
+  _onboardMsgs.push({role:'user', content: text});
+  document.getElementById('onboardSpinner').style.display = 'block';
+
+  try {
+    const r = await fetch(BACKEND + '/api/biz/onboard', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({company:'GB', messages: _onboardMsgs})
+    });
+    const d = await r.json();
+    const reply = d.reply || "Got it — thanks!";
+    _appendOnboardMsg('assistant', reply);
+    _onboardMsgs.push({role:'assistant', content: reply});
+
+    if (d.done && d.profile) {
+      setTimeout(() => _onboardFinish(d.profile), 1200);
+      return;
+    }
+  } catch(e) {
+    _appendOnboardMsg('assistant', "Sorry, I'm having trouble connecting. Try again in a moment.");
+  }
+
+  document.getElementById('onboardSpinner').style.display = 'none';
+  input.disabled = false;
+  input.focus();
+}
+
+function _appendOnboardMsg(role, text) {
+  const chat = document.getElementById('onboardChat');
+  const isAI = role === 'assistant';
+  const row   = document.createElement('div');
+  row.style.cssText = `display:flex;${isAI ? 'justify-content:flex-start' : 'justify-content:flex-end'}`;
+  const bubble = document.createElement('div');
+  bubble.style.cssText = [
+    'max-width:82%;padding:12px 16px;border-radius:12px;font-size:18px;line-height:1.5',
+    isAI
+      ? 'background:#1c2a3a;color:#e6edf3;border-bottom-left-radius:4px'
+      : 'background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border-bottom-right-radius:4px'
+  ].join(';');
+  bubble.textContent = text;
+  row.appendChild(bubble);
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function _onboardFinish(profile) {
+  document.getElementById('onboardSpinner').style.display = 'none';
+  // Show a brief "done" message then close
+  const chat = document.getElementById('onboardChat');
+  const done = document.createElement('div');
+  done.style.cssText = 'text-align:center;color:#3fb950;font-size:18px;font-weight:600;padding:12px 0';
+  done.textContent = '✅ Your dashboard is set up!';
+  chat.appendChild(done);
+  chat.scrollTop = chat.scrollHeight;
+  document.getElementById('onboardInputRow').style.display = 'none';
+
+  setTimeout(() => {
+    document.getElementById('bizOnboardingModal').style.display = 'none';
+    localStorage.setItem('lv_onboarded_gb', '1');
+    _applyBizProfile(profile);
+  }, 1800);
+}
+
+function _applyBizProfile(profile) {
+  window._bizProfile = profile;
+  // Show reconfigure button
+  const btn = document.getElementById('gb-reconfig-btn');
+  if (btn) btn.style.display = '';
+  // Future: reorder monitors based on profile.priorities
+  console.log('[LightView] Business profile applied:', profile.business_type, profile.priorities);
+}
+
+function _onboardSkip() {
+  document.getElementById('bizOnboardingModal').style.display = 'none';
+  localStorage.setItem('lv_onboarded_gb', '1');
+}
+
+async function _bizReconfigure() {
+  if (!confirm('This will reset your personalised setup and start the brief conversation again. Continue?')) return;
+  localStorage.removeItem('lv_onboarded_gb');
+  window._bizProfile = null;
+  const btn = document.getElementById('gb-reconfig-btn');
+  if (btn) btn.style.display = 'none';
+  try {
+    await fetch(BACKEND + '/api/biz/profile?company=GB', {method:'DELETE'});
+  } catch(e) {}
+  _startOnboarding();
+}
+
 
 // ===== INIT =====
 renderAll();
