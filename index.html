@@ -1691,6 +1691,7 @@ function updateQBPanel() {
 function enterDemo() {
   // Check if already authenticated this session
   if (sessionStorage.getItem('lv_auth') === '1') {
+    _lockToGBF();
     _dismissLanding();
     return;
   }
@@ -1698,6 +1699,16 @@ function enterDemo() {
   const ps = document.getElementById('pin-screen');
   ps.style.display = 'flex';
   setTimeout(() => document.getElementById('pin-input').focus(), 50);
+}
+
+function _lockToGBF() {
+  // Switch to GBF and hide company switcher + demo banner
+  switchEntity('gb');
+  const sel = document.getElementById('entitySelect');
+  if (sel) sel.closest('.entity-wrap').querySelector('.entity-label').style.display = 'none';
+  if (sel) sel.style.display = 'none';
+  const demoBanner = document.querySelector('.demo-banner');
+  if (demoBanner) demoBanner.style.display = 'none';
 }
 
 function _dismissLanding() {
@@ -1726,6 +1737,7 @@ async function submitPin() {
       ps.style.transition = 'opacity 0.3s ease';
       ps.style.opacity = '0';
       setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
+      _lockToGBF();
       _dismissLanding();
     } else {
       document.getElementById('pin-error').style.display = 'block';
