@@ -966,6 +966,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="gb-nav-tab active" onclick="gbShowTab('orders')" id="gbTab-orders">📋 Orders</button>
         <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory">📦 Inventory</button>
         <button class="gb-nav-tab" onclick="gbShowTab('aivm')" id="gbTab-aivm">🤖 Ask AIVM</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('manufacturers')" id="gbTab-manufacturers">🏭 Manufacturers</button>
       </div>
 
       <!-- Orders sub-section -->
@@ -1163,6 +1164,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
       </div><!-- end #gbSection-aivm -->
 
+      <!-- Manufacturers sub-section -->
+      <div id="gbSection-manufacturers" class="gb-tab-section" style="display:none;margin-top:4px">
+        <!-- content rendered by gbLoadManufacturers() JS -->
+      </div><!-- end #gbSection-manufacturers -->
+
     </div>
 
     <!-- ═══ GREAT BRIDGE FURNITURE — CALENDAR ═══ -->
@@ -1295,7 +1301,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <textarea id="mo-items" placeholder="e.g. Sectional sofa (gray), Coffee table, 2x end tables" rows="3" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box;resize:vertical"></textarea>
       </label>
       <label style="font-size:18px;font-weight:600">Manufacturer / Supplier
-        <input id="mo-mfr" type="text" placeholder="e.g. Ashley Furniture" style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        <input id="mo-mfr" type="text" list="gbMfrDatalist" placeholder="Start typing manufacturer name..." style="display:block;width:100%;margin-top:6px;background:var(--bg2);border:1px solid var(--border);color:var(--text1);padding:10px 14px;border-radius:6px;font-size:18px;box-sizing:border-box">
+        <datalist id="gbMfrDatalist"></datalist>
       </label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <label style="font-size:18px;font-weight:600">Total Sale Amount
@@ -1896,6 +1903,7 @@ function switchEntity(val) {
     if (docsNav) docsNav.style.display = '';
     if (portNav) portNav.style.display = 'none';   // GB uses Orders section instead
     loadOrders();
+    gbLoadManufacturers();
     // Start on Orders section for GB
     renderAll();
     showSection('orders');
@@ -2533,6 +2541,13 @@ function renderOrderTable() {
           style="display:inline-block;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px;text-decoration:none">📷</a>` : ''}
         <button onclick="gbOpenProposal(${o.id})" title="Generate Proposal"
           style="background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">📄</button>
+        <button onclick="gbSendPO(${o.id},'${(o.manufacturer||'').replace(/'/g,"\\'")}')"
+          title="Send Purchase Order to manufacturer by email"
+          style="display:inline-block;background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">
+          ${o.po_sent_at ? '✅📧' : '📧'}</button>
+        <a href="${BACKEND}/api/gb/orders/${o.id}/po-preview" target="_blank"
+          title="Print Purchase Order"
+          style="display:inline-block;background:rgba(255,255,255,0.06);color:var(--muted,#888);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px;text-decoration:none">🖨️</a>
         <button onclick="deleteOrder(${o.id}, '${(o.customer_name||'').replace(/'/g,"\\'")}')"
           style="background:rgba(248,81,73,0.1);color:var(--red);border:1px solid rgba(248,81,73,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer">🗑️</button>
       </td>
@@ -4460,13 +4475,14 @@ async function _startOnboarding() {
 
 // ── GB Sub-tab navigation ─────────────────────────────────────────────────────
 function gbShowTab(tab) {
-  ['orders','inventory','aivm'].forEach(t => {
+  ['orders','inventory','aivm','manufacturers'].forEach(t => {
     const sec = document.getElementById('gbSection-' + t);
     const btn = document.getElementById('gbTab-' + t);
     if (sec) sec.style.display = (t === tab) ? '' : 'none';
     if (btn) btn.classList.toggle('active', t === tab);
   });
-  if (tab === 'inventory') gbLoadInventory();
+  if (tab === 'inventory')     gbLoadInventory();
+  if (tab === 'manufacturers') gbLoadManufacturers();
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────────
@@ -5076,6 +5092,302 @@ async function gbBulkSaveAll() {
     toast(`${saved} saved, ${failed} failed — check console for details.`);
     loadOrders();
   }
+}
+
+// ===== MANUFACTURERS =====
+let _gbManufacturers = [];
+
+function gbLoadManufacturers() {
+  fetch(BACKEND + '/api/gb/manufacturers')
+    .then(r => r.json())
+    .then(list => {
+      _gbManufacturers = list;
+      _gbRenderManufacturers(list);
+      _gbUpdateMfrDatalist();
+    })
+    .catch(() => toast('Could not load manufacturers'));
+}
+
+function _gbUpdateMfrDatalist() {
+  const dl = document.getElementById('gbMfrDatalist');
+  if (!dl) return;
+  dl.innerHTML = _gbManufacturers.map(m => `<option value="${m.name}"></option>`).join('');
+}
+
+function _gbRenderManufacturers(list) {
+  const tab = document.getElementById('gbSection-manufacturers');
+  if (!tab) return;
+  const empty = list.length === 0;
+  tab.innerHTML = `
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap">
+      <h3 style="margin:0;font-size:22px;color:var(--text)">🏭 Manufacturers</h3>
+      <button class="btn" onclick="gbOpenAddMfr()" style="font-size:17px;padding:8px 18px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.35)">+ Add Manufacturer</button>
+      <button class="btn" onclick="gbOpenImportMfr()" style="font-size:17px;padding:8px 18px;background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.35)">📁 Import from File</button>
+    </div>
+    ${empty ? `<p style="color:var(--muted,#888);font-size:18px">No manufacturers yet. Add one or import from David's file.</p>` : `
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:17px">
+      <thead>
+        <tr style="border-bottom:2px solid rgba(255,255,255,0.1)">
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Name</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Contact</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Email</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Phone</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Fax</th>
+          <th style="text-align:left;padding:10px 12px;color:var(--muted,#888)">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.map(m => `<tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+          <td style="padding:10px 12px;font-weight:600">${m.name}</td>
+          <td style="padding:10px 12px;color:var(--muted,#888)">${m.contact_person||''}</td>
+          <td style="padding:10px 12px">${m.email ? `<a href="mailto:${m.email}" style="color:var(--blue)">${m.email}</a>` : ''}</td>
+          <td style="padding:10px 12px;color:var(--muted,#888)">${m.phone||''}</td>
+          <td style="padding:10px 12px;color:var(--muted,#888)">${m.fax||''}</td>
+          <td style="padding:10px 12px">
+            <button onclick="gbEditMfr(${m.id})" style="background:rgba(88,166,255,0.12);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:5px 12px;font-size:15px;cursor:pointer;margin-right:6px">✏️ Edit</button>
+            <button onclick="gbDeleteMfr(${m.id},'${m.name.replace(/'/g,"\\'")}')" style="background:rgba(255,80,80,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.3);border-radius:6px;padding:5px 12px;font-size:15px;cursor:pointer">🗑️</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    </div>`}
+
+    <!-- Add/Edit Manufacturer Modal -->
+    <div id="gbMfrModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center">
+      <div style="background:var(--surface,var(--card));border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto">
+        <h3 id="gbMfrModalTitle" style="margin:0 0 20px;font-size:22px">Add Manufacturer</h3>
+        <input type="hidden" id="gbMfrId">
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Company Name *</label>
+            <input id="gbMfrName" class="inp" placeholder="e.g. Ashley Furniture" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px"></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Contact Person</label>
+            <input id="gbMfrContact" class="inp" placeholder="Sales rep name" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px"></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Email</label>
+            <input id="gbMfrEmail" class="inp" type="email" placeholder="orders@manufacturer.com" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px"></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Phone</label>
+            <input id="gbMfrPhone" class="inp" placeholder="(800) 000-0000" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px"></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Fax</label>
+            <input id="gbMfrFax" class="inp" placeholder="(800) 000-0001" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px"></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Address</label>
+            <textarea id="gbMfrAddress" class="inp" rows="2" placeholder="Street, City, State ZIP" style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px;resize:vertical"></textarea></div>
+          <div><label style="font-size:16px;color:var(--muted,#888);display:block;margin-bottom:4px">Notes</label>
+            <textarea id="gbMfrNotes" class="inp" rows="2" placeholder="Lead time, special ordering notes, etc." style="width:100%;box-sizing:border-box;background:var(--bg2,var(--bg));border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:6px;font-size:17px;resize:vertical"></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end">
+          <button onclick="gbCloseMfrModal()" class="btn" style="font-size:17px;padding:10px 20px;background:rgba(255,255,255,0.06);color:var(--muted,#888)">Cancel</button>
+          <button onclick="gbSaveMfr()" class="btn" style="font-size:17px;padding:10px 24px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.4)">💾 Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import Manufacturers Modal -->
+    <div id="gbMfrImportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9001;align-items:center;justify-content:center">
+      <div style="position:relative;background:var(--surface,var(--card));border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:32px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto">
+        <h3 style="margin:0 0 16px;font-size:22px">📁 Import Manufacturer List</h3>
+        <p style="color:var(--muted,#888);font-size:17px;margin-bottom:20px">Upload David's Word document or spreadsheet. AI will extract all manufacturer contact info automatically.</p>
+        <div id="gbMfrImportStep1">
+          <label style="display:block;border:2px dashed rgba(88,166,255,0.4);border-radius:12px;padding:32px;text-align:center;cursor:pointer;color:var(--blue);font-size:18px">
+            📄 Click to select file (.xlsx, .csv, .docx)
+            <input type="file" accept=".xlsx,.csv,.docx,.xls" onchange="gbMfrImportFileSelected(this)" style="display:none">
+          </label>
+        </div>
+        <div id="gbMfrImportStep2" style="display:none">
+          <div style="text-align:center;padding:20px">
+            <div style="font-size:32px;margin-bottom:12px">⏳</div>
+            <div id="gbMfrImportStatus" style="font-size:18px;color:var(--muted,#888)">Reading file with AI...</div>
+          </div>
+        </div>
+        <div id="gbMfrImportStep3" style="display:none">
+          <p style="color:var(--muted,#888);font-size:16px;margin-bottom:12px">Review extracted manufacturers. Uncheck any you don't want to import.</p>
+          <div style="margin-bottom:10px"><label style="font-size:16px;cursor:pointer"><input type="checkbox" id="gbMfrToggleAllCb" onchange="gbMfrToggleAll(this)" checked> Select All</label></div>
+          <div id="gbMfrImportTable" style="max-height:320px;overflow-y:auto;border:1px solid rgba(255,255,255,0.1);border-radius:8px"></div>
+          <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+            <button onclick="gbCloseMfrImport()" class="btn" style="font-size:17px;padding:10px 20px;background:rgba(255,255,255,0.06);color:var(--muted,#888)">Cancel</button>
+            <button onclick="gbMfrImportSave()" id="gbMfrImportSaveBtn" class="btn" style="font-size:17px;padding:10px 24px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.4)">✅ Save All</button>
+          </div>
+        </div>
+        <button onclick="gbCloseMfrImport()" style="position:absolute;top:16px;right:20px;background:none;border:none;color:var(--muted,#888);font-size:22px;cursor:pointer">✕</button>
+      </div>
+    </div>
+  `;
+  // Ensure modals start hidden
+  const mfrMod = document.getElementById('gbMfrModal');
+  const impMod = document.getElementById('gbMfrImportModal');
+  if (mfrMod) mfrMod.style.display = 'none';
+  if (impMod) impMod.style.display = 'none';
+}
+
+function gbOpenAddMfr() {
+  document.getElementById('gbMfrModalTitle').textContent = 'Add Manufacturer';
+  document.getElementById('gbMfrId').value = '';
+  ['Name','Contact','Email','Phone','Fax','Address','Notes'].forEach(f => {
+    const el = document.getElementById('gbMfr' + f);
+    if (el) el.value = '';
+  });
+  document.getElementById('gbMfrModal').style.display = 'flex';
+}
+
+function gbEditMfr(id) {
+  const m = _gbManufacturers.find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('gbMfrModalTitle').textContent = 'Edit Manufacturer';
+  document.getElementById('gbMfrId').value       = id;
+  document.getElementById('gbMfrName').value     = m.name           || '';
+  document.getElementById('gbMfrContact').value  = m.contact_person || '';
+  document.getElementById('gbMfrEmail').value    = m.email          || '';
+  document.getElementById('gbMfrPhone').value    = m.phone          || '';
+  document.getElementById('gbMfrFax').value      = m.fax            || '';
+  document.getElementById('gbMfrAddress').value  = m.address        || '';
+  document.getElementById('gbMfrNotes').value    = m.notes          || '';
+  document.getElementById('gbMfrModal').style.display = 'flex';
+}
+
+function gbCloseMfrModal() {
+  const m = document.getElementById('gbMfrModal');
+  if (m) m.style.display = 'none';
+}
+
+function gbSaveMfr() {
+  const id = document.getElementById('gbMfrId').value;
+  const payload = {
+    name:           document.getElementById('gbMfrName').value.trim(),
+    contact_person: document.getElementById('gbMfrContact').value.trim(),
+    email:          document.getElementById('gbMfrEmail').value.trim(),
+    phone:          document.getElementById('gbMfrPhone').value.trim(),
+    fax:            document.getElementById('gbMfrFax').value.trim(),
+    address:        document.getElementById('gbMfrAddress').value.trim(),
+    notes:          document.getElementById('gbMfrNotes').value.trim(),
+  };
+  if (!payload.name) { alert('Company name is required'); return; }
+  const url    = id ? BACKEND + '/api/gb/manufacturers/' + id : BACKEND + '/api/gb/manufacturers';
+  const method = id ? 'PUT' : 'POST';
+  fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) { gbCloseMfrModal(); gbLoadManufacturers(); toast(id ? 'Manufacturer updated' : 'Manufacturer added'); }
+      else toast('Save failed');
+    });
+}
+
+function gbDeleteMfr(id, name) {
+  if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
+  fetch(BACKEND + '/api/gb/manufacturers/' + id, {method:'DELETE'})
+    .then(r => r.json())
+    .then(data => { if (data.ok) { gbLoadManufacturers(); toast('Manufacturer deleted'); } });
+}
+
+function gbOpenImportMfr() {
+  document.getElementById('gbMfrImportStep1').style.display = 'block';
+  document.getElementById('gbMfrImportStep2').style.display = 'none';
+  document.getElementById('gbMfrImportStep3').style.display = 'none';
+  document.getElementById('gbMfrImportModal').style.display = 'flex';
+}
+
+function gbCloseMfrImport() {
+  const m = document.getElementById('gbMfrImportModal');
+  if (m) m.style.display = 'none';
+}
+
+let _gbMfrImportData = [];
+function gbMfrImportFileSelected(input) {
+  const file = input.files[0];
+  if (!file) return;
+  document.getElementById('gbMfrImportStep1').style.display = 'none';
+  document.getElementById('gbMfrImportStep2').style.display = 'block';
+  document.getElementById('gbMfrImportStatus').textContent = 'Reading file with AI...';
+  const fd = new FormData();
+  fd.append('file', file, file.name);
+  fetch(BACKEND + '/api/gb/manufacturers/import', {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok || !data.manufacturers || data.manufacturers.length === 0) {
+        document.getElementById('gbMfrImportStatus').textContent = 'No manufacturers found in file. Try a different file.';
+        return;
+      }
+      _gbMfrImportData = data.manufacturers;
+      document.getElementById('gbMfrImportStep2').style.display = 'none';
+      document.getElementById('gbMfrImportStep3').style.display = 'block';
+      const tbl = document.getElementById('gbMfrImportTable');
+      tbl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:15px">
+        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1)">
+          <th style="padding:8px;text-align:left">✓</th>
+          <th style="padding:8px;text-align:left">Name</th>
+          <th style="padding:8px;text-align:left">Contact</th>
+          <th style="padding:8px;text-align:left">Email</th>
+          <th style="padding:8px;text-align:left">Phone</th>
+        </tr></thead>
+        <tbody>${_gbMfrImportData.map((m,i) => `<tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+          <td style="padding:8px"><input type="checkbox" class="gbMfrImportCheck" data-idx="${i}" checked></td>
+          <td style="padding:8px;font-weight:600">${m.name||''}</td>
+          <td style="padding:8px;color:var(--muted,#888)">${m.contact_person||''}</td>
+          <td style="padding:8px;color:var(--blue)">${m.email||''}</td>
+          <td style="padding:8px;color:var(--muted,#888)">${m.phone||''}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+      document.getElementById('gbMfrImportSaveBtn').textContent = `✅ Save ${data.manufacturers.length} Manufacturers`;
+    })
+    .catch(() => {
+      document.getElementById('gbMfrImportStatus').textContent = 'Import failed. Please try again.';
+    });
+}
+
+function gbMfrToggleAll(cb) {
+  document.querySelectorAll('.gbMfrImportCheck').forEach(c => c.checked = cb.checked);
+}
+
+async function gbMfrImportSave() {
+  const checks   = document.querySelectorAll('.gbMfrImportCheck');
+  const selected = Array.from(checks).filter(c => c.checked).map(c => _gbMfrImportData[parseInt(c.dataset.idx)]);
+  if (selected.length === 0) { alert('No manufacturers selected'); return; }
+  document.getElementById('gbMfrImportSaveBtn').textContent = 'Saving...';
+  let saved = 0;
+  for (const m of selected) {
+    try {
+      const r = await fetch(BACKEND + '/api/gb/manufacturers', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(m)
+      });
+      const d = await r.json();
+      if (d.ok) saved++;
+    } catch(e) {}
+  }
+  gbCloseMfrImport();
+  gbLoadManufacturers();
+  toast(`✅ Imported ${saved} manufacturers`);
+}
+
+// ===== SEND PO =====
+
+function gbSendPO(orderId, mfrName) {
+  const mfr       = _gbManufacturers.find(m => m.name === mfrName || (mfrName && m.name.toLowerCase().includes(mfrName.toLowerCase())));
+  const knownEmail = mfr ? mfr.email : '';
+
+  let emailToUse = knownEmail;
+  if (!emailToUse) {
+    emailToUse = prompt(`No email found for "${mfrName || 'this manufacturer'}"\nEnter manufacturer email address to send PO:`);
+    if (!emailToUse) return;
+  } else {
+    if (!confirm(`Send Purchase Order for order #${orderId} to:\n${mfrName}\n${knownEmail}\n\nThis will email the PO from the store's AOL account.`)) return;
+  }
+
+  const user = _getCurrentUser ? _getCurrentUser() : 'Staff';
+  fetch(BACKEND + '/api/gb/orders/' + orderId + '/send-po', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({user_name: user, override_email: emailToUse})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      toast(`✅ PO emailed to ${data.sent_to}`);
+      loadOrders();
+    } else if (data.setup_needed) {
+      toast('⚠️ Email not configured — set Railway env vars GBF_EMAIL_ADDRESS and GBF_EMAIL_PASSWORD');
+    } else {
+      toast('❌ ' + (data.error || 'Email failed'));
+    }
+  })
+  .catch(() => toast('❌ Could not send PO'));
 }
 
 // ===== PROPOSAL =====
