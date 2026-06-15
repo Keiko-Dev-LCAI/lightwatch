@@ -957,6 +957,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <label class="gb-scan-btn" for="gbScanInput">📷 Scan Ticket</label>
           <input type="file" id="gbScanInput" accept="image/*,.pdf" style="display:none" onchange="gbScanTicket(this)">
           <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
+          <button class="btn" onclick="gbOpenBulkImport()" style="font-size:18px;padding:8px 18px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.35)">📁 Import Past Tickets</button>
         </div>
       </div>
 
@@ -1405,6 +1406,49 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div style="width:44px;height:44px;border:3px solid rgba(88,166,255,.3);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 18px"></div>
     <div style="font-size:20px;font-weight:700;color:var(--text);margin-bottom:8px">📷 Reading your ticket…</div>
     <div style="font-size:17px;color:var(--text2)">AIVM is extracting order details</div>
+  </div>
+</div>
+
+<!-- BULK TICKET IMPORT MODAL -->
+<div id="gbBulkImportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;overflow-y:auto">
+  <div style="background:var(--bg1);border:1px solid var(--border);border-radius:12px;margin:30px auto;max-width:860px;padding:28px;color:var(--text1)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-size:24px;font-weight:700">📁 Import Past Ticket Images</div>
+      <button onclick="gbCloseBulkImport()" style="background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer">✕</button>
+    </div>
+    <div style="font-size:18px;color:var(--text2);margin-bottom:18px">
+      Select all the scanned ticket images from your folder. AIVM will read each one and create orders automatically.
+      You can review everything before saving.
+    </div>
+
+    <!-- Step 1: File picker -->
+    <div id="gbBulkStep1">
+      <label style="display:block;border:2px dashed var(--border);border-radius:10px;padding:36px;text-align:center;cursor:pointer;background:rgba(255,255,255,.02)">
+        <div style="font-size:40px;margin-bottom:10px">🖼️</div>
+        <div style="font-size:20px;font-weight:600;color:var(--text1);margin-bottom:6px">Click to choose ticket images</div>
+        <div style="font-size:17px;color:var(--text3)">JPG, PNG, PDF — up to 50 at a time</div>
+        <input type="file" id="gbBulkFileInput" accept="image/*,.pdf" multiple style="display:none" onchange="gbBulkFilesSelected(this)">
+      </label>
+    </div>
+
+    <!-- Step 2: Scanning progress -->
+    <div id="gbBulkStep2" style="display:none">
+      <div style="font-size:19px;font-weight:600;margin-bottom:12px">⏳ AIVM is reading your tickets…</div>
+      <div style="background:var(--bg2);border-radius:8px;height:12px;overflow:hidden;margin-bottom:8px">
+        <div id="gbBulkProgressBar" style="background:var(--blue);height:100%;width:0%;transition:width .3s"></div>
+      </div>
+      <div id="gbBulkProgressText" style="font-size:17px;color:var(--text3)">Starting…</div>
+    </div>
+
+    <!-- Step 3: Preview results -->
+    <div id="gbBulkStep3" style="display:none">
+      <div style="font-size:19px;font-weight:600;margin-bottom:14px">✅ Review extracted orders below. Uncheck any you don't want to save.</div>
+      <div id="gbBulkPreviewTable" style="overflow-x:auto;margin-bottom:18px"></div>
+      <div style="display:flex;gap:12px;justify-content:flex-end">
+        <button onclick="gbCloseBulkImport()" style="padding:10px 22px;font-size:17px;background:var(--bg3);color:var(--text2);border:1px solid var(--border);border-radius:8px;cursor:pointer">Cancel</button>
+        <button onclick="gbBulkSaveAll()" id="gbBulkSaveBtn" style="padding:10px 28px;font-size:17px;font-weight:700;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer">💾 Save Checked Orders</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2485,6 +2529,8 @@ function renderOrderTable() {
         <button class="gb-docs-btn" id="gbdocsbtn-${o.id}" onclick="gbToggleDocs(${o.id})">📎 Docs</button>
       </td>
       <td style="padding:12px 14px;white-space:nowrap">
+        ${o.ticket_doc_id ? `<a href="${BACKEND}/api/gb/docs/${o.ticket_doc_id}" target="_blank" title="View original ticket scan"
+          style="display:inline-block;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px;text-decoration:none">📷</a>` : ''}
         <button onclick="gbOpenProposal(${o.id})" title="Generate Proposal"
           style="background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">📄</button>
         <button onclick="deleteOrder(${o.id}, '${(o.customer_name||'').replace(/'/g,"\\'")}')"
@@ -2857,10 +2903,26 @@ function saveNewOrder() {
     body: JSON.stringify(order)
   })
   .then(r => r.json())
-  .then(data => {
+  .then(async data => {
     if (data.ok) {
       closeModal();
-      toast('Order saved!');
+      // If a ticket image is pending, attach it to the new order
+      if (_gbPendingTicket && data.id) {
+        try {
+          const tfd = new FormData();
+          tfd.append('file', _gbPendingTicket, _gbPendingTicket.name);
+          tfd.append('user_name', _getCurrentUser());
+          await fetch(BACKEND + '/api/gb/orders/' + data.id + '/set-ticket', {
+            method: 'POST', body: tfd
+          });
+          toast('✅ Order saved and ticket image attached!');
+        } catch (e) {
+          toast('Order saved — ticket image could not be attached.');
+        }
+        _gbPendingTicket = null;
+      } else {
+        toast('Order saved!');
+      }
       loadOrders();
     } else {
       toast('Error saving: ' + (data.error || 'unknown'));
@@ -4654,6 +4716,9 @@ let _gbAskMsgs = [];        // conversation history for this session
 let _gbAskFile = null;      // { name, b64, mime }
 let _gbAskBusy = false;
 
+// ===== TICKET SCAN GLOBALS =====
+let _gbPendingTicket = null;  // File object waiting to be attached after order save
+
 function gbAskAppendMsg(role, text) {
   const container = document.getElementById('gbAskMsgs');
   if (!container) return;
@@ -4749,7 +4814,18 @@ async function gbAskSend() {
     const data = await res.json();
     const reply = data.reply || 'Sorry, I could not get a response.';
     if (thinkBubble) thinkBubble.closest('.gb-chat-row-ai')?.remove();
-    gbAskAppendMsg('assistant', reply);
+    const bubble = gbAskAppendMsg('assistant', reply);
+    // If the server returned a downloadable file, append a download button
+    if (data.download && data.download.b64 && bubble) {
+      const dl = data.download;
+      const btn = document.createElement('a');
+      btn.href     = 'data:' + dl.mime + ';base64,' + dl.b64;
+      btn.download = dl.filename;
+      btn.textContent = '⬇️ Download ' + dl.filename;
+      btn.style.cssText = 'display:inline-block;margin-top:10px;padding:8px 16px;background:rgba(88,166,255,0.15);color:var(--blue);border:1px solid rgba(88,166,255,0.4);border-radius:8px;font-size:16px;font-weight:600;text-decoration:none;cursor:pointer';
+      bubble.appendChild(document.createElement('br'));
+      bubble.appendChild(btn);
+    }
     _gbAskMsgs.push({ role: 'assistant', content: reply });
   } catch (e) {
     if (thinkBubble) thinkBubble.closest('.gb-chat-row-ai')?.remove();
@@ -4777,6 +4853,9 @@ async function gbScanTicket(input) {
   const file = input.files[0];
   if (!file) return;
   input.value = '';
+
+  // Store the file — will be attached to the order after saveNewOrder() succeeds
+  _gbPendingTicket = file;
 
   const overlay = document.getElementById('gbScanOverlay');
   overlay.style.display = 'flex';
@@ -4829,6 +4908,174 @@ function gbFillOrderModal(fields) {
     if (matched) document.getElementById('mo-status').value = matched;
   }
   if (fields.notes) document.getElementById('mo-notes').value = fields.notes;
+}
+
+// ===== BULK TICKET IMPORT =====
+
+let _gbBulkFiles  = [];   // Array of File objects
+let _gbBulkResults = [];  // Array of { file, filename, fields, error }
+
+function gbOpenBulkImport() {
+  _gbBulkFiles   = [];
+  _gbBulkResults = [];
+  document.getElementById('gbBulkStep1').style.display = '';
+  document.getElementById('gbBulkStep2').style.display = 'none';
+  document.getElementById('gbBulkStep3').style.display = 'none';
+  document.getElementById('gbBulkFileInput').value = '';
+  document.getElementById('gbBulkImportModal').style.display = '';
+}
+
+function gbCloseBulkImport() {
+  document.getElementById('gbBulkImportModal').style.display = 'none';
+  _gbBulkFiles   = [];
+  _gbBulkResults = [];
+}
+
+async function gbBulkFilesSelected(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  if (files.length > 50) { toast('Maximum 50 images at a time'); return; }
+  _gbBulkFiles = files;
+
+  // Show progress step
+  document.getElementById('gbBulkStep1').style.display = 'none';
+  document.getElementById('gbBulkStep2').style.display  = '';
+  document.getElementById('gbBulkStep3').style.display  = 'none';
+  input.value = '';
+
+  // Send ALL files in one batch call
+  const progressBar  = document.getElementById('gbBulkProgressBar');
+  const progressText = document.getElementById('gbBulkProgressText');
+  progressBar.style.width = '10%';
+  progressText.textContent = `Sending ${files.length} image${files.length > 1 ? 's' : ''} to AIVM…`;
+
+  const fd = new FormData();
+  files.forEach(f => fd.append('tickets[]', f, f.name));
+
+  let results = [];
+  try {
+    const res = await fetch(BACKEND + '/api/gb/bulk-scan', { method: 'POST', body: fd });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    results = data.results || [];
+    progressBar.style.width = '100%';
+    progressText.textContent = `Done! ${results.length} ticket${results.length !== 1 ? 's' : ''} processed.`;
+  } catch (e) {
+    progressText.textContent = 'Error: ' + e.message;
+    setTimeout(() => { document.getElementById('gbBulkStep1').style.display = ''; document.getElementById('gbBulkStep2').style.display = 'none'; }, 2000);
+    return;
+  }
+
+  // Match results back to file objects by order
+  _gbBulkResults = results.map((r, i) => ({ file: files[i], ...r }));
+
+  // Build preview table
+  const tableEl = document.getElementById('gbBulkPreviewTable');
+  if (_gbBulkResults.length === 0) {
+    tableEl.innerHTML = '<div style="color:var(--text3);font-size:18px;padding:20px">No results returned.</div>';
+  } else {
+    let html = `<table style="width:100%;border-collapse:collapse;font-size:16px">
+      <thead>
+        <tr style="background:var(--bg2);border-bottom:2px solid var(--border)">
+          <th style="padding:10px 8px;text-align:left;width:30px"><input type="checkbox" id="gbBulkCheckAll" checked onchange="gbBulkToggleAll(this)"></th>
+          <th style="padding:10px 8px;text-align:left">File</th>
+          <th style="padding:10px 8px;text-align:left">Customer</th>
+          <th style="padding:10px 8px;text-align:left">Items</th>
+          <th style="padding:10px 8px;text-align:right">Total</th>
+          <th style="padding:10px 8px;text-align:right">Deposit</th>
+          <th style="padding:10px 8px;text-align:left">Status</th>
+          <th style="padding:10px 8px;text-align:left">Expected</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    _gbBulkResults.forEach((r, i) => {
+      const f = r.fields || {};
+      const err = r.error ? `<span style="color:var(--red)">${r.error}</span>` : '';
+      const name  = f.customer_name || err || '—';
+      const items = (f.items || '—').toString().slice(0, 60);
+      html += `<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px"><input type="checkbox" class="gbBulkCheck" data-idx="${i}" checked></td>
+        <td style="padding:8px;color:var(--text3);font-size:14px">${r.filename}</td>
+        <td style="padding:8px;font-weight:600">${name}</td>
+        <td style="padding:8px;color:var(--text2)">${items}</td>
+        <td style="padding:8px;text-align:right">${f.total_price || '—'}</td>
+        <td style="padding:8px;text-align:right">${f.deposit_paid || '—'}</td>
+        <td style="padding:8px">${f.status || '—'}</td>
+        <td style="padding:8px">${f.expected_date || '—'}</td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    tableEl.innerHTML = html;
+  }
+
+  document.getElementById('gbBulkStep2').style.display = 'none';
+  document.getElementById('gbBulkStep3').style.display = '';
+}
+
+function gbBulkToggleAll(cb) {
+  document.querySelectorAll('.gbBulkCheck').forEach(c => c.checked = cb.checked);
+}
+
+async function gbBulkSaveAll() {
+  const checked = Array.from(document.querySelectorAll('.gbBulkCheck:checked'));
+  if (!checked.length) { toast('No orders selected'); return; }
+
+  const btn = document.getElementById('gbBulkSaveBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving…';
+
+  let saved = 0, failed = 0;
+  for (const cb of checked) {
+    const idx = parseInt(cb.dataset.idx);
+    const r   = _gbBulkResults[idx];
+    if (!r) continue;
+    const f = r.fields || {};
+
+    try {
+      // Create order
+      const order = {
+        customer_name: f.customer_name || 'Unknown',
+        phone:         f.phone || '',
+        items:         f.items ? [f.items] : [],
+        manufacturer:  f.manufacturer || '',
+        total_amount:  parseFloat(String(f.total_price || '0').replace(/[^0-9.]/g, '')) || 0,
+        deposit_paid:  parseFloat(String(f.deposit_paid || '0').replace(/[^0-9.]/g, '')) || 0,
+        expected_date: f.expected_date || null,
+        status:        (['Ordered','In Transit','Received','Ready for Pickup','Delivered','Paid'].includes(f.status)) ? f.status : 'Ordered',
+        notes:         f.notes || '',
+        user_name:     _getCurrentUser(),
+      };
+      const saveRes  = await fetch(BACKEND + '/api/gb/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(order)
+      });
+      const saveData = await saveRes.json();
+      if (!saveData.ok) throw new Error(saveData.error || 'Save failed');
+
+      // Attach ticket image
+      if (r.file && saveData.id) {
+        const tfd = new FormData();
+        tfd.append('file', r.file, r.filename);
+        tfd.append('user_name', _getCurrentUser());
+        await fetch(BACKEND + '/api/gb/orders/' + saveData.id + '/set-ticket', { method: 'POST', body: tfd });
+      }
+      saved++;
+    } catch (e) {
+      console.error('[bulk-save]', e);
+      failed++;
+    }
+  }
+
+  btn.disabled    = false;
+  btn.textContent = '💾 Save Checked Orders';
+
+  if (failed === 0) {
+    toast(`✅ ${saved} order${saved !== 1 ? 's' : ''} imported with ticket images!`);
+    gbCloseBulkImport();
+    loadOrders();
+  } else {
+    toast(`${saved} saved, ${failed} failed — check console for details.`);
+    loadOrders();
+  }
 }
 
 // ===== PROPOSAL =====
