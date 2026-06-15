@@ -952,7 +952,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <!-- ═══ GREAT BRIDGE FURNITURE — ORDERS ═══ -->
     <div class="section" id="section-orders">
       <div class="sec-header">
-        <h2 class="sec-title">🛋️ Great Bridge Furniture — Orders</h2>
+        <h2 class="sec-title" id="gbOrdersTitle">🛋️ Great Bridge Furniture — Orders</h2>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <label class="gb-scan-btn" for="gbScanInput">📷 Scan Ticket</label>
           <input type="file" id="gbScanInput" accept="image/*,.pdf" style="display:none" onchange="gbScanTicket(this)">
@@ -962,11 +962,15 @@ tr:hover td{background:rgba(255,255,255,.02)}
       </div>
 
       <!-- GB Sub-Navigation Tabs -->
-      <div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px">
-        <button class="gb-nav-tab active" onclick="gbShowTab('orders')" id="gbTab-orders">📋 Orders</button>
-        <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory">📦 Inventory</button>
-        <button class="gb-nav-tab" onclick="gbShowTab('aivm')" id="gbTab-aivm">🤖 Ask AIVM</button>
-        <button class="gb-nav-tab" onclick="gbShowTab('manufacturers')" id="gbTab-manufacturers">🏭 Manufacturers</button>
+      <div style="display:flex;gap:4px;border-bottom:2px solid var(--border);margin-bottom:16px;flex-wrap:wrap;align-items:center">
+        <button class="gb-nav-tab active" onclick="gbShowTab('orders')" id="gbTab-orders" data-feature-key="orders">📋 Orders</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory" data-feature-key="inventory">📦 Inventory</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('aivm')" id="gbTab-aivm" data-feature-key="aivm_assistant">🤖 Ask AIVM</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('manufacturers')" id="gbTab-manufacturers" data-feature-key="manufacturers">🏭 Manufacturers</button>
+        <button id="nav-tab-reports" onclick="showSection('reports')" style="margin-left:auto;background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="reports">📄 Reports</button>
+        <button id="nav-tab-calendar" onclick="showSection('calendar')" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="calendar">📅 Calendar</button>
+        <button id="nav-tab-documents" onclick="showSection('docs')" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="documents">📁 Docs</button>
+        <button onclick="openSetupWizard()" title="Configure Dashboard" id="nav-configure-btn" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer">⚙️ Configure</button>
       </div>
 
       <!-- Orders sub-section -->
@@ -1524,6 +1528,53 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <script>
 // ===== BACKEND =====
 const BACKEND = 'https://web-production-c7177.up.railway.app';
+
+// ===== COMPANY / FEATURE HELPERS =====
+function _getCompany() {
+    try { return JSON.parse(sessionStorage.getItem('lv_company') || '{}'); }
+    catch { return {}; }
+}
+
+let _companyFeatures = {};
+
+async function loadCompanyFeatures() {
+    const co = _getCompany();
+    if (!co.id) return;
+    try {
+        const r = await fetch(`${BACKEND}/api/companies/${co.id}/features`);
+        const d = await r.json();
+        _companyFeatures = {};
+        d.features.forEach(f => { _companyFeatures[f.key] = f.enabled; });
+    } catch(e) {
+        // default: all enabled
+    }
+    _renderFeatureNav();
+}
+
+function _hasFeature(key) {
+    if (Object.keys(_companyFeatures).length === 0) return true; // default all on
+    return !!_companyFeatures[key];
+}
+
+function _renderFeatureNav() {
+    // Map feature keys to their nav button IDs (sidebar + named buttons)
+    const featureMapById = {
+        'reports': 'nav-tab-reports',
+        'calendar': 'nav-tab-calendar',
+        'documents': 'nav-tab-documents',
+    };
+    for (const [key, id] of Object.entries(featureMapById)) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = _hasFeature(key) ? '' : 'none';
+        }
+    }
+    // Tab buttons with data-feature-key attributes
+    document.querySelectorAll('[data-feature-key]').forEach(el => {
+        const key = el.getAttribute('data-feature-key');
+        el.style.display = _hasFeature(key) ? '' : 'none';
+    });
+}
 
 // ===== DATA =====
 
@@ -2304,6 +2355,14 @@ function _lockToGBF() {
   if (sel) sel.style.display = 'none';
   const demoBanner = document.querySelector('.demo-banner');
   if (demoBanner) demoBanner.style.display = 'none';
+  // Update company name from sessionStorage
+  const co = _getCompany();
+  if (co && co.name) {
+    const emoji = co.emoji || '🏢';
+    const titleEl = document.getElementById('gbOrdersTitle');
+    if (titleEl) titleEl.textContent = emoji + ' ' + co.name + ' — Orders';
+    D.gb.name = co.name;
+  }
 }
 
 function _dismissLanding() {
@@ -2328,6 +2387,8 @@ async function submitPin() {
     const data = await res.json();
     if (data.ok) {
       sessionStorage.setItem('lv_auth', '1');
+      sessionStorage.setItem('lv_company', JSON.stringify(data.company));
+      await loadCompanyFeatures();
       const ps = document.getElementById('pin-screen');
       ps.style.transition = 'opacity 0.3s ease';
       ps.style.opacity = '0';
@@ -5396,10 +5457,81 @@ function gbOpenProposal(orderId) {
   window.open(BACKEND + '/api/gb/proposal/' + orderId, '_blank');
 }
 
+// ===== SETUP WIZARD =====
+let _wizardMessages = [];
+
+async function openSetupWizard() {
+    _wizardMessages = [];
+    document.getElementById('setupWizardModal').style.display = 'flex';
+    document.getElementById('wizardMessages').innerHTML = '';
+    // Send initial empty message to get greeting
+    await sendWizardMsg('');
+}
+
+function closeSetupWizard() {
+    document.getElementById('setupWizardModal').style.display = 'none';
+}
+
+async function sendWizardMsg(text) {
+    const input = document.getElementById('wizardInput');
+    const msg = text !== undefined ? text : input.value.trim();
+    if (msg === '' && _wizardMessages.length > 0) return;
+    if (input) input.value = '';
+
+    if (msg) {
+        _wizardMessages.push({role:'user', content:msg});
+        _appendWizardMsg('You', msg, false);
+    }
+
+    const co = _getCompany();
+    try {
+        const r = await fetch(`${BACKEND}/api/companies/${co.id}/setup-wizard`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({messages: _wizardMessages})
+        });
+        const d = await r.json();
+        _wizardMessages.push({role:'assistant', content:d.reply});
+        _appendWizardMsg('🧙 LightView', d.reply, true);
+
+        if (d.features_configured) {
+            _appendWizardMsg('✅ System', 'Dashboard configured! Refreshing your features...', true);
+            await loadCompanyFeatures();
+            setTimeout(closeSetupWizard, 2000);
+        }
+    } catch(e) {
+        _appendWizardMsg('⚠️', 'Connection error. Please try again.', true);
+    }
+}
+
+function _appendWizardMsg(from, text, isAI) {
+    const el = document.getElementById('wizardMessages');
+    el.innerHTML += `<div style="margin-bottom:12px; ${isAI?'':'text-align:right'}">
+        <div style="font-size:13px; color:#64748b; margin-bottom:4px;">${from}</div>
+        <div style="background:${isAI?'#1e293b':'#1d4ed8'}; padding:10px 14px; border-radius:8px; font-size:18px; color:#e2e8f0; display:inline-block; max-width:90%; text-align:left;">${text}</div>
+    </div>`;
+    el.scrollTop = el.scrollHeight;
+}
+
 // ===== INIT =====
 renderAll();
 initQB();
 </script>
+
+<!-- Setup Wizard Modal -->
+<div id="setupWizardModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:700; align-items:center; justify-content:center;">
+  <div style="background:#1a1f2e; border-radius:12px; width:min(500px,90vw); padding:24px; max-height:80vh; display:flex; flex-direction:column;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="color:#60a5fa; font-size:22px; margin:0;">🧙 Dashboard Setup</h2>
+      <button onclick="closeSetupWizard()" style="background:none; border:none; color:#94a3b8; font-size:24px; cursor:pointer;">✕</button>
+    </div>
+    <div id="wizardMessages" style="flex:1; overflow-y:auto; margin-bottom:16px; min-height:200px;"></div>
+    <div style="display:flex; gap:8px;">
+      <input id="wizardInput" placeholder="Type your answer..." onkeydown="if(event.key==='Enter')sendWizardMsg()" style="flex:1; background:#0f172a; border:1px solid #334155; border-radius:8px; padding:10px 14px; color:#e2e8f0; font-size:18px;">
+      <button onclick="sendWizardMsg()" style="background:#1d4ed8; color:white; border:none; border-radius:8px; padding:10px 18px; font-size:18px; cursor:pointer;">Send</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
