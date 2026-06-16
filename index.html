@@ -485,6 +485,10 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <span class="nav-icon">🚨</span> Alerts
       <span class="nav-badge" id="alertBadge">2</span>
     </div>
+    <div class="nav" onclick="showSection('assistant')" id="nav-assistant">
+      <span class="nav-icon">🤖</span> Assistant
+      <span class="nav-badge" id="reminderBadge" style="display:none">0</span>
+    </div>
     <div class="nav" onclick="showSection('rules')" id="nav-rules">
       <span class="nav-icon">📋</span> Rules
     </div>
@@ -510,6 +514,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="nav" onclick="showSection('docs')" id="nav-docs" style="display:none">
       <span class="nav-icon">📁</span> Documents
     </div>
+    <div class="nav" onclick="showSection('adminnotes')" id="nav-adminnotes" style="display:none">
+      <span class="nav-icon">📝</span> Visit Notes
+    </div>
     <div class="sidebar-footer">
       <div style="color:var(--text3);font-size:18px;margin-bottom:4px">Powered by</div>
       <div style="color:var(--text2);font-size:18px;font-weight:600">Lightchain AIVM</div>
@@ -528,6 +535,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div class="sec-header">
         <h2 class="sec-title" id="dashTitle">Meridian Manufacturing</h2>
         <div class="live-badge"><div class="live-dot"></div> Live</div>
+      </div>
+      <!-- GB "Configured for you" banner -->
+      <div id="gbConfigBanner" style="background:linear-gradient(135deg,rgba(88,166,255,0.12),rgba(188,140,255,0.12));border:1px solid rgba(88,166,255,0.3);border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <span style="font-size:28px">✅</span>
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#58a6ff">Configured for Great Bridge Furniture</div>
+            <div style="font-size:18px;color:#8b949e">Your dashboard is personalized. Use 🤖 Assistant for reminders, schedules, and proposals.</div>
+          </div>
+        </div>
+        <button onclick="dismissGBBanner()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:#8b949e;padding:6px 14px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0">Dismiss</button>
       </div>
       <div class="stats-row" id="statsRow"></div>
 
@@ -1215,6 +1233,74 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div id="cal-day-events" style="display:flex;flex-direction:column;gap:14px"></div>
       </div>
 
+    </div>
+
+    <!-- ===== ASSISTANT ===== -->
+    <div class="section" id="section-assistant">
+      <div class="sec-header">
+        <h2 class="sec-title">🤖 Assistant</h2>
+        <div style="font-size:18px;color:#8b949e">David's personal business assistant</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start">
+
+        <!-- REMINDERS PANEL -->
+        <div style="background:#161b22;border:1px solid #21262d;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <span style="font-size:20px;font-weight:700;color:#e6edf3">📌 Reminders</span>
+            <span id="reminderCount" style="font-size:17px;color:#8b949e">—</span>
+          </div>
+          <div id="remindersList" style="display:flex;flex-direction:column;gap:10px;min-height:60px">
+            <div style="color:#8b949e;font-size:18px;text-align:center;padding:16px">Loading…</div>
+          </div>
+        </div>
+
+        <!-- CHAT PANEL -->
+        <div style="background:#161b22;border:1px solid #21262d;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:14px">
+
+          <!-- Quick-action chips -->
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button onclick="assistantQuickSend('What needs my attention today?')" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);padding:8px 16px;border-radius:20px;font-size:18px;cursor:pointer">What needs attention today?</button>
+            <button onclick="assistantQuickSend('What is my schedule for today?')" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);padding:8px 16px;border-radius:20px;font-size:18px;cursor:pointer">What's my schedule?</button>
+            <button onclick="assistantQuickSend('Show me my open reminders')" style="background:rgba(188,140,255,0.12);color:#bc8cff;border:1px solid rgba(188,140,255,0.3);padding:8px 16px;border-radius:20px;font-size:18px;cursor:pointer">My reminders</button>
+          </div>
+
+          <!-- Chat messages -->
+          <div id="assistantMessages" style="display:flex;flex-direction:column;gap:12px;min-height:220px;max-height:420px;overflow-y:auto">
+            <div style="background:rgba(188,140,255,0.1);border:1px solid rgba(188,140,255,0.2);border-radius:10px;padding:14px 18px;font-size:18px;color:#e6edf3;line-height:1.6">
+              👋 Hi David! I'm here to help. Tell me what you need — reminders, schedule questions, or drafting a proposal. You can say things like:<br><br>
+              <em>"Remind me to call Mr. Jones at 3pm"</em><br>
+              <em>"What time is the Smith delivery coming in?"</em><br>
+              <em>"I need a proposal for John Doe, here are my notes…"</em>
+            </div>
+          </div>
+
+          <!-- Input row -->
+          <div style="display:flex;gap:10px;align-items:flex-end">
+            <label for="assistantPhotoInput" title="Upload photo of handwritten notes" style="background:rgba(88,166,255,0.12);border:1px solid rgba(88,166,255,0.3);color:#58a6ff;padding:12px 14px;border-radius:8px;font-size:22px;cursor:pointer;flex-shrink:0;line-height:1">📷</label>
+            <input type="file" id="assistantPhotoInput" accept="image/*" capture="environment" style="display:none" onchange="assistantPhotoSend(this)">
+            <textarea id="assistantInput" placeholder="Ask me anything… or say 'remind me to call Mr. Jones at 3pm'" style="flex:1;background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:12px 16px;font-size:18px;color:#e6edf3;resize:none;min-height:54px;max-height:120px;font-family:inherit;line-height:1.5" rows="2" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();assistantSend()}"></textarea>
+            <button onclick="assistantSend()" style="background:linear-gradient(135deg,#bc8cff,#58a6ff);color:#000;font-weight:700;padding:12px 20px;border-radius:8px;font-size:18px;cursor:pointer;flex-shrink:0;border:none">Send</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ADMIN NOTES ===== -->
+    <div class="section" id="section-adminnotes">
+      <div class="sec-header">
+        <h2 class="sec-title">📝 Visit Notes</h2>
+        <div style="font-size:18px;color:#8b949e">Private — never shown to clients</div>
+      </div>
+      <div style="background:#161b22;border:1px solid #21262d;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:18px;color:#8b949e">Use this to record observations during your visits to Great Bridge Furniture. Saved privately in your browser.</div>
+        <textarea id="adminNotesPad" style="background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:16px;font-size:18px;color:#e6edf3;resize:vertical;min-height:320px;width:100%;box-sizing:border-box;font-family:inherit;line-height:1.7" placeholder="Visit notes…&#10;&#10;e.g. 2026-06-16 — Met with David. Wants faster delivery tracking…"></textarea>
+        <div style="display:flex;align-items:center;gap:14px">
+          <button onclick="saveAdminNotes()" style="background:rgba(56,139,253,0.15);color:#58a6ff;border:1px solid rgba(56,139,253,0.3);padding:10px 22px;border-radius:8px;font-size:18px;cursor:pointer;font-weight:700">💾 Save Notes</button>
+          <span id="adminNotesSavedMsg" style="font-size:18px;color:#3fb950;display:none">✅ Saved</span>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -5513,9 +5599,148 @@ function _appendWizardMsg(from, text, isAI) {
     el.scrollTop = el.scrollHeight;
 }
 
+// ===== REMINDER BADGE =====
+function updateReminderBadge(count) {
+  var badge = document.getElementById('reminderBadge');
+  if (!badge) return;
+  if (count > 0) { badge.textContent = count; badge.style.display = 'inline-block'; }
+  else { badge.style.display = 'none'; }
+}
+
+// ===== LOAD REMINDERS =====
+async function loadReminders() {
+  try {
+    var res = await fetch(BACKEND + '/api/gb/reminders');
+    var data = await res.json();
+    var list = document.getElementById('remindersList');
+    var countEl = document.getElementById('reminderCount');
+    if (!list) return;
+    var active = (data.reminders || []).filter(function(r){ return !r.done; });
+    updateReminderBadge(active.length);
+    if (countEl) countEl.textContent = active.length + ' active';
+    if (active.length === 0) {
+      list.innerHTML = '<div style="color:#8b949e;font-size:18px;text-align:center;padding:20px">No reminders — say "remind me to…" in chat</div>';
+      return;
+    }
+    list.innerHTML = active.map(function(r) {
+      var due = r.due_date ? '<div style="font-size:16px;color:#8b949e;margin-top:4px">🕐 ' + _escH(r.due_date) + '</div>' : '';
+      return '<div style="background:#0d1117;border:1px solid #21262d;border-radius:8px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px">'
+        + '<button onclick="markReminderDone(' + r.id + ')" style="background:rgba(63,185,80,0.12);border:1px solid rgba(63,185,80,0.3);color:#3fb950;padding:4px 10px;border-radius:6px;font-size:18px;cursor:pointer;flex-shrink:0" title="Mark done">✓</button>'
+        + '<div style="flex:1"><div style="font-size:18px;color:#e6edf3;line-height:1.5">' + _escH(r.text) + '</div>' + due + '</div>'
+        + '<button onclick="deleteReminder(' + r.id + ')" style="background:none;border:none;color:#8b949e;font-size:20px;cursor:pointer;flex-shrink:0;padding:2px 6px" title="Delete">×</button>'
+        + '</div>';
+    }).join('');
+  } catch(e) { console.error('loadReminders:', e); }
+}
+
+function _escH(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function markReminderDone(id) {
+  try { await fetch(BACKEND + '/api/gb/reminders/' + id + '/done', {method:'POST'}); loadReminders(); } catch(e) {}
+}
+
+async function deleteReminder(id) {
+  try { await fetch(BACKEND + '/api/gb/reminders/' + id, {method:'DELETE'}); loadReminders(); } catch(e) {}
+}
+
+// ===== ASSISTANT CHAT =====
+function assistantQuickSend(text) {
+  var inp = document.getElementById('assistantInput');
+  if (inp) inp.value = text;
+  assistantSend();
+}
+
+async function assistantSend() {
+  var input = document.getElementById('assistantInput');
+  if (!input) return;
+  var msg = (input.value || '').trim();
+  if (!msg) return;
+  input.value = '';
+  _appendAMsg('user', msg);
+  var thinking = _appendAMsg('bot', '⏳ Thinking…');
+  try {
+    var entity = (typeof currentEntity !== 'undefined') ? currentEntity : 'greatbridge';
+    var res = await fetch(BACKEND + '/api/gb/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question: msg, entity: entity})
+    });
+    var data = await res.json();
+    if (thinking && thinking.parentNode) thinking.remove();
+    _appendAMsg('bot', data.reply || 'Sorry, I could not get a response.');
+    if (data.reminder_created) { loadReminders(); }
+  } catch(e) {
+    if (thinking && thinking.parentNode) thinking.remove();
+    _appendAMsg('bot', '❌ Could not reach assistant. Please try again.');
+  }
+}
+
+function _appendAMsg(type, text) {
+  var container = document.getElementById('assistantMessages');
+  if (!container) return null;
+  var div = document.createElement('div');
+  if (type === 'user') {
+    div.style.cssText = 'background:rgba(56,139,253,0.12);border:1px solid rgba(56,139,253,0.25);border-radius:10px;padding:12px 16px;font-size:18px;color:#e6edf3;line-height:1.6;align-self:flex-end;max-width:85%';
+  } else {
+    div.style.cssText = 'background:rgba(188,140,255,0.1);border:1px solid rgba(188,140,255,0.2);border-radius:10px;padding:14px 18px;font-size:18px;color:#e6edf3;line-height:1.6;white-space:pre-wrap';
+  }
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+function assistantPhotoSend(input) {
+  if (!input.files || !input.files[0]) return;
+  var inp = document.getElementById('assistantInput');
+  if (inp) {
+    inp.value = 'My handwritten notes say: ';
+    inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
+  }
+  input.value = '';
+  if (typeof toast === 'function') toast('📷 Type what the notes say and hit Send');
+}
+
+// ===== GB BANNER =====
+function dismissGBBanner() {
+  var banner = document.getElementById('gbConfigBanner');
+  if (banner) banner.style.display = 'none';
+  try { localStorage.setItem('gbBannerDismissed', '1'); } catch(e) {}
+}
+
+function initGBBanner() {
+  var banner = document.getElementById('gbConfigBanner');
+  if (!banner) return;
+  try { if (localStorage.getItem('gbBannerDismissed') === '1') banner.style.display = 'none'; } catch(e) {}
+}
+
+// ===== ADMIN NOTES =====
+function saveAdminNotes() {
+  var pad = document.getElementById('adminNotesPad');
+  if (!pad) return;
+  try {
+    localStorage.setItem('gbAdminNotes', pad.value);
+    var msg = document.getElementById('adminNotesSavedMsg');
+    if (msg) { msg.style.display = 'inline'; setTimeout(function(){ msg.style.display = 'none'; }, 2000); }
+  } catch(e) {}
+}
+
+function loadAdminNotes() {
+  var pad = document.getElementById('adminNotesPad');
+  if (!pad) return;
+  try { var saved = localStorage.getItem('gbAdminNotes'); if (saved) pad.value = saved; } catch(e) {}
+}
+
 // ===== INIT =====
 renderAll();
 initQB();
+initGBBanner();
+loadAdminNotes();
+loadReminders();
+(function(){ var n = document.getElementById('nav-adminnotes'); if(n) n.style.display='block'; })();
 </script>
 
 <!-- Setup Wizard Modal -->
