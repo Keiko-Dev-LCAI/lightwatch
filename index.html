@@ -985,6 +985,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="gb-nav-tab" onclick="gbShowTab('inventory')" id="gbTab-inventory" data-feature-key="inventory">📦 Inventory</button>
         <button class="gb-nav-tab" onclick="gbShowTab('aivm')" id="gbTab-aivm" data-feature-key="aivm_assistant">🤖 Ask AIVM</button>
         <button class="gb-nav-tab" onclick="gbShowTab('manufacturers')" id="gbTab-manufacturers" data-feature-key="manufacturers">🏭 Manufacturers</button>
+        <button class="gb-nav-tab" onclick="gbShowTab('pos')" id="gbTab-pos" data-feature-key="pos">🗂️ POs</button>
         <button id="nav-tab-reports" onclick="showSection('reports')" style="margin-left:auto;background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="reports">📄 Reports</button>
         <button id="nav-tab-calendar" onclick="showSection('calendar')" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="calendar">📅 Calendar</button>
         <button id="nav-tab-documents" onclick="showSection('docs')" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;border-radius:8px;padding:8px 14px;font-size:18px;cursor:pointer" data-feature-key="documents">📁 Docs</button>
@@ -1190,6 +1191,54 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div id="gbSection-manufacturers" class="gb-tab-section" style="display:none;margin-top:4px">
         <!-- content rendered by gbLoadManufacturers() JS -->
       </div><!-- end #gbSection-manufacturers -->
+
+      <!-- ── PURCHASE ORDERS sub-section ───────────────────────────────────── -->
+      <div id="gbSection-pos" class="gb-tab-section" style="display:none;margin-top:4px">
+
+        <!-- PO header row -->
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+          <div style="font-size:24px;font-weight:800;color:var(--text)">🗂️ Purchase Orders</div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <label style="cursor:pointer;background:var(--blue);color:#000;font-weight:700;font-size:18px;padding:9px 18px;border-radius:8px;display:flex;align-items:center;gap:8px" for="poScanInput">
+              📷 Scan PO
+            </label>
+            <input type="file" id="poScanInput" accept="image/*,.pdf" style="display:none" onchange="gbScanPO(this)">
+          </div>
+        </div>
+
+        <!-- PO search/filter bar -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+          <input type="text" id="poSearchInput" placeholder="Search manufacturer, PO#, customer tag…"
+            style="flex:1;min-width:220px;background:var(--card);border:1px solid var(--border2);color:var(--text);padding:10px 16px;border-radius:8px;font-size:18px;outline:none"
+            oninput="gbRenderPOs()">
+          <select id="poMfgFilter" onchange="gbRenderPOs()"
+            style="background:var(--card);border:1px solid var(--border2);color:var(--text);padding:10px 14px;border-radius:8px;font-size:18px;outline:none;cursor:pointer">
+            <option value="">All Manufacturers</option>
+          </select>
+        </div>
+
+        <!-- PO list -->
+        <div id="goPOsLoading" style="padding:24px;text-align:center;font-size:18px;color:var(--text2)">Loading POs…</div>
+        <div id="goPOsEmpty" style="display:none;padding:32px;text-align:center;font-size:19px;color:var(--text2)">
+          No purchase orders yet. Scan a handwritten PO to get started.
+        </div>
+        <div id="goPOsTable" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:18px">
+            <thead>
+              <tr>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">Manufacturer</th>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">PO #</th>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">Order Date</th>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">Required By</th>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">Items / Tags</th>
+                <th style="padding:14px 20px;text-align:left;color:var(--text2);font-weight:600;text-transform:uppercase;font-size:16px;letter-spacing:.4px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.03)">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="goPOsBody"></tbody>
+          </table>
+        </div>
+
+      </div><!-- end #gbSection-pos -->
 
     </div>
 
@@ -1608,6 +1657,105 @@ tr:hover td{background:rgba(255,255,255,.02)}
       style="width:100%;background:linear-gradient(135deg,#58a6ff,#bc8cff);color:#fff;border:none;border-radius:8px;padding:14px;font-size:18px;font-weight:700;cursor:pointer">
       Enter →
     </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PO SCAN MODAL — upload image → AIVM extracts → preview & edit → save
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="poScanModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px">
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:30px 28px;width:100%;max-width:760px;position:relative">
+      <button onclick="closePOScanModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:#8b949e;font-size:26px;cursor:pointer;line-height:1">×</button>
+      <h2 style="font-size:24px;font-weight:800;margin-bottom:6px;color:#e6edf3">📷 Scan Purchase Order</h2>
+      <p style="color:#8b949e;font-size:18px;margin-bottom:20px">Take a photo or upload a scan. AIVM will read the handwriting and extract all fields.</p>
+
+      <!-- Step 1: image preview + extract button -->
+      <div id="poScanStep1">
+        <div id="poPreviewWrap" style="margin-bottom:16px;text-align:center">
+          <img id="poPreviewImg" src="" alt="" style="max-width:100%;max-height:360px;border-radius:8px;border:1px solid #30363d;display:none">
+        </div>
+        <div id="poScanStatus" style="font-size:18px;color:#8b949e;margin-bottom:16px;display:none"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onclick="poRunExtract()" id="poExtractBtn" style="display:none;background:#58a6ff;color:#000;font-weight:700;font-size:18px;padding:10px 22px;border:none;border-radius:8px;cursor:pointer">
+            🤖 Extract Fields with AIVM
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 2: extracted fields for review/edit -->
+      <div id="poScanStep2" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">Manufacturer</label>
+            <input id="poFld-manufacturer" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">PO Number</label>
+            <input id="poFld-po_number" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">Order Date</label>
+            <input id="poFld-order_date" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">Account Number</label>
+            <input id="poFld-account_number" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">Date Required</label>
+            <input id="poFld-date_required" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+          <div>
+            <label style="font-size:16px;color:#8b949e;display:block;margin-bottom:4px">Submitted By</label>
+            <input id="poFld-submitted_by" type="text" style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;font-size:18px;outline:none">
+          </div>
+        </div>
+
+        <!-- Line items table -->
+        <div style="font-size:18px;font-weight:700;margin-bottom:10px;color:#e6edf3">Line Items</div>
+        <div style="overflow-x:auto;margin-bottom:16px">
+          <table id="poItemsEditTable" style="width:100%;border-collapse:collapse;font-size:16px">
+            <thead>
+              <tr style="background:rgba(255,255,255,.04)">
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Qty</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Description</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Item #</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Back/Style</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">S/B/T</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Frame</th>
+                <th style="padding:8px 10px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #30363d">Tag</th>
+                <th style="padding:8px 10px;border-bottom:1px solid #30363d"></th>
+              </tr>
+            </thead>
+            <tbody id="poItemsEditBody"></tbody>
+          </table>
+          <button onclick="poAddItemRow()" style="margin-top:8px;background:none;border:1px dashed #30363d;color:#8b949e;padding:6px 16px;border-radius:6px;font-size:16px;cursor:pointer">+ Add Row</button>
+        </div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button onclick="poSaveScanned()" style="background:#3fb950;color:#000;font-weight:700;font-size:18px;padding:10px 24px;border:none;border-radius:8px;cursor:pointer">
+            💾 Save PO
+          </button>
+          <button onclick="document.getElementById('poScanStep2').style.display='none';document.getElementById('poScanStep1').style.display=''" style="background:none;border:1px solid #30363d;color:#8b949e;font-size:18px;padding:10px 18px;border-radius:8px;cursor:pointer">
+            ← Back
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PO DETAIL MODAL — original image + extracted data + linked orders
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="pODetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;overflow-y:auto">
+  <div style="min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:30px 16px">
+    <div style="background:#161b22;border:1px solid #30363d;border-radius:16px;padding:30px 28px;width:100%;max-width:900px;position:relative">
+      <button onclick="closePODetailModal()" style="position:absolute;top:16px;right:18px;background:none;border:none;color:#8b949e;font-size:26px;cursor:pointer;line-height:1">×</button>
+      <div id="poDetailContent" style="color:#e6edf3"></div>
+    </div>
   </div>
 </div>
 
@@ -4622,7 +4770,7 @@ async function _startOnboarding() {
 
 // ── GB Sub-tab navigation ─────────────────────────────────────────────────────
 function gbShowTab(tab) {
-  ['orders','inventory','aivm','manufacturers'].forEach(t => {
+  ['orders','inventory','aivm','manufacturers','pos'].forEach(t => {
     const sec = document.getElementById('gbSection-' + t);
     const btn = document.getElementById('gbTab-' + t);
     if (sec) sec.style.display = (t === tab) ? '' : 'none';
@@ -4630,6 +4778,7 @@ function gbShowTab(tab) {
   });
   if (tab === 'inventory')     gbLoadInventory();
   if (tab === 'manufacturers') gbLoadManufacturers();
+  if (tab === 'pos')           gbLoadPOs();
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────────
@@ -5542,6 +5691,356 @@ function gbSendPO(orderId, mfrName) {
 function gbOpenProposal(orderId) {
   window.open(BACKEND + '/api/gb/proposal/' + orderId, '_blank');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCANNED PURCHASE ORDERS  (Session 126)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _gbPOs      = [];
+let _poBlobData = null;   // raw ArrayBuffer of the chosen image
+let _poBlobMime = '';
+let _poExtracted = null;  // last extracted JSON from AIVM
+
+// ── Load + render list ────────────────────────────────────────────────────────
+async function gbLoadPOs() {
+  document.getElementById('goPOsLoading').style.display = '';
+  document.getElementById('goPOsEmpty').style.display   = 'none';
+  document.getElementById('goPOsTable').style.display   = 'none';
+  try {
+    const res  = await fetch(BACKEND + '/api/gb/scanned-pos');
+    const data = await res.json();
+    _gbPOs = data.pos || [];
+    _gbPopulatePOMfgFilter();
+    gbRenderPOs();
+  } catch(e) {
+    document.getElementById('goPOsLoading').innerHTML =
+      `<span style="color:var(--red)">Could not load POs: ${e.message}</span>`;
+  }
+}
+
+function _gbPopulatePOMfgFilter() {
+  const sel = document.getElementById('poMfgFilter');
+  if (!sel) return;
+  const mfgs = [...new Set(_gbPOs.map(p => p.manufacturer).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">All Manufacturers</option>' +
+    mfgs.map(m => `<option value="${_esc(m)}">${_esc(m)}</option>`).join('');
+}
+
+function gbRenderPOs() {
+  const q   = (document.getElementById('poSearchInput')?.value || '').toLowerCase();
+  const mfg = document.getElementById('poMfgFilter')?.value || '';
+  let pos = _gbPOs;
+  if (mfg) pos = pos.filter(p => p.manufacturer === mfg);
+  if (q)   pos = pos.filter(p =>
+    (p.manufacturer||'').toLowerCase().includes(q) ||
+    (p.po_number||'').toLowerCase().includes(q) ||
+    (p.order_date||'').toLowerCase().includes(q) ||
+    (p.tags||[]).some(t => t.toLowerCase().includes(q))
+  );
+
+  const loading = document.getElementById('goPOsLoading');
+  const empty   = document.getElementById('goPOsEmpty');
+  const table   = document.getElementById('goPOsTable');
+  loading.style.display = 'none';
+
+  if (pos.length === 0) {
+    empty.style.display = ''; table.style.display = 'none'; return;
+  }
+  empty.style.display = 'none'; table.style.display = '';
+
+  document.getElementById('goPOsBody').innerHTML = pos.map(p => {
+    const tags  = (p.tags || []).map(t => `<span style="background:rgba(88,166,255,.15);color:#58a6ff;padding:2px 8px;border-radius:12px;font-size:16px;font-weight:700">${_esc(t)}</span>`).join(' ');
+    const items = p.item_count !== undefined ? p.item_count : (p.items||[]).length;
+    return `<tr>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d;font-weight:600">${_esc(p.manufacturer||'—')}</td>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d;font-family:monospace;color:#8b949e">${_esc(p.po_number||'—')}</td>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d;color:#8b949e">${_esc(p.order_date||'—')}</td>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d;color:#d29922;font-weight:600">${_esc(p.date_required||'—')}</td>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d">${items} item${items!==1?'s':''} ${tags}</td>
+      <td style="padding:14px 20px;border-bottom:1px solid #21262d">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="gbOpenPODetail(${p.id})" style="background:var(--blue);color:#000;font-weight:700;font-size:16px;padding:6px 14px;border:none;border-radius:6px;cursor:pointer">View</button>
+          <button onclick="gbPrintPO(${p.id})" style="background:#161b22;border:1px solid #30363d;color:#8b949e;font-size:16px;padding:6px 12px;border-radius:6px;cursor:pointer" title="Print / Digital PO">🖨️</button>
+          <button onclick="gbEmailScannedPO(${p.id})" style="background:#161b22;border:1px solid #30363d;color:#8b949e;font-size:16px;padding:6px 12px;border-radius:6px;cursor:pointer" title="Email to Manufacturer">📧</button>
+          <button onclick="gbDeletePO(${p.id})" style="background:#161b22;border:1px solid rgba(248,81,73,.4);color:var(--red);font-size:16px;padding:6px 10px;border-radius:6px;cursor:pointer" title="Delete">🗑️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Scan flow ─────────────────────────────────────────────────────────────────
+function gbScanPO(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  _poBlobMime = file.type || 'image/jpeg';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    _poBlobData  = e.target.result;  // ArrayBuffer
+    const img    = document.getElementById('poPreviewImg');
+    img.src      = URL.createObjectURL(file);
+    img.style.display = '';
+    document.getElementById('poExtractBtn').style.display = '';
+    // reset steps
+    document.getElementById('poScanStep1').style.display = '';
+    document.getElementById('poScanStep2').style.display = 'none';
+    document.getElementById('poScanStatus').style.display = 'none';
+    document.getElementById('poScanModal').style.display  = '';
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = ''; // allow re-selecting same file
+}
+
+async function poRunExtract() {
+  if (!_poBlobData) return;
+  const btn    = document.getElementById('poExtractBtn');
+  const status = document.getElementById('poScanStatus');
+  btn.disabled = true; btn.textContent = '⏳ Extracting…';
+  status.style.display = ''; status.style.color = '#8b949e';
+  status.textContent   = 'Sending image to AIVM — this may take 20–40 seconds…';
+
+  try {
+    // Build multipart form
+    const blob = new Blob([_poBlobData], {type: _poBlobMime});
+    const fd   = new FormData();
+    fd.append('image', blob, 'po.jpg');
+
+    const res  = await fetch(BACKEND + '/api/gb/scan-po', {method:'POST', body: fd});
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Extract failed');
+    _poExtracted = data.fields;
+    _poPopulateExtractedFields(data.fields);
+    document.getElementById('poScanStep1').style.display = 'none';
+    document.getElementById('poScanStep2').style.display = '';
+  } catch(e) {
+    status.style.color = '#f85149';
+    status.textContent = '❌ ' + e.message;
+    btn.disabled = false; btn.textContent = '🤖 Extract Fields with AIVM';
+  }
+}
+
+function _poPopulateExtractedFields(f) {
+  ['manufacturer','po_number','order_date','account_number','date_required','submitted_by'].forEach(k => {
+    const el = document.getElementById('poFld-' + k);
+    if (el) el.value = f[k] || '';
+  });
+  // items
+  const tbody = document.getElementById('poItemsEditBody');
+  tbody.innerHTML = '';
+  const items = f.items || [];
+  items.forEach(it => poAddItemRow(it));
+  if (items.length === 0) poAddItemRow();
+}
+
+function poAddItemRow(it) {
+  it = it || {};
+  const tbody = document.getElementById('poItemsEditBody');
+  const tr    = document.createElement('tr');
+  const flds  = ['qty','description','item_number','back_style','seat_back_top','frame','tag'];
+  tr.innerHTML = flds.map(k =>
+    `<td style="padding:4px 6px;border-bottom:1px solid #21262d">
+      <input type="text" value="${_esc(it[k]||'')}"
+        style="width:100%;background:#0d1117;border:1px solid #30363d;color:#e6edf3;padding:6px 8px;border-radius:4px;font-size:15px;outline:none;min-width:${k==='description'?'120px':'70px'}">
+    </td>`
+  ).join('') +
+  `<td style="padding:4px 6px;border-bottom:1px solid #21262d">
+    <button onclick="this.closest('tr').remove()" style="background:none;border:none;color:#f85149;font-size:18px;cursor:pointer">×</button>
+  </td>`;
+  tbody.appendChild(tr);
+}
+
+function _poReadItemRows() {
+  const keys  = ['qty','description','item_number','back_style','seat_back_top','frame','tag'];
+  const rows  = document.querySelectorAll('#poItemsEditBody tr');
+  return [...rows].map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const obj = {};
+    keys.forEach((k, i) => { obj[k] = inputs[i]?.value || ''; });
+    return obj;
+  }).filter(r => r.qty || r.description || r.item_number);
+}
+
+async function poSaveScanned() {
+  const fields = {};
+  ['manufacturer','po_number','order_date','account_number','date_required','submitted_by'].forEach(k => {
+    fields[k] = document.getElementById('poFld-' + k)?.value || '';
+  });
+  fields.items = _poReadItemRows();
+
+  // encode image
+  const arr  = new Uint8Array(_poBlobData);
+  const b64  = btoa(arr.reduce((d, b) => d + String.fromCharCode(b), ''));
+
+  try {
+    const res  = await fetch(BACKEND + '/api/gb/scanned-pos', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({...fields, image_b64: b64, image_type: _poBlobMime, image_filename: 'po.jpg'})
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Save failed');
+    toast(`✅ PO saved (ID ${data.id})`);
+    closePOScanModal();
+    gbLoadPOs();
+  } catch(e) {
+    toast('❌ ' + e.message);
+  }
+}
+
+function closePOScanModal() {
+  document.getElementById('poScanModal').style.display = 'none';
+  _poBlobData = null; _poBlobMime = ''; _poExtracted = null;
+}
+
+// ── Detail modal ─────────────────────────────────────────────────────────────
+async function gbOpenPODetail(id) {
+  const modal   = document.getElementById('pODetailModal');
+  const content = document.getElementById('poDetailContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px;color:#8b949e;font-size:18px">Loading…</div>';
+  modal.style.display = '';
+
+  try {
+    const res  = await fetch(BACKEND + `/api/gb/scanned-pos/${id}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Load failed');
+    const po = data.po;
+
+    const itemRows = (po.items || []).map(it =>
+      `<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d">${_esc(it.qty||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d;font-weight:500">${_esc(it.description||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d;color:#8b949e;font-family:monospace">${_esc(it.item_number||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d;color:#8b949e">${_esc(it.back_style||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d;color:#8b949e">${_esc(it.seat_back_top||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d;color:#8b949e">${_esc(it.frame||'')}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #21262d">
+          ${it.tag ? `<span style="background:rgba(88,166,255,.15);color:#58a6ff;padding:2px 8px;border-radius:12px;font-weight:700">${_esc(it.tag)}</span>` : '—'}
+        </td>
+      </tr>`
+    ).join('');
+
+    const linkedOrders = (po.linked_orders || []).map(o =>
+      `<div style="padding:10px 14px;background:rgba(255,255,255,.03);border-radius:6px;border:1px solid #21262d;margin-bottom:8px;cursor:pointer" onclick="closePODetailModal();showOrderDetail(${o.id})">
+        <div style="font-size:18px;font-weight:700">${_esc(o.customer_name||'')} <span style="color:#8b949e;font-weight:400;font-size:16px">#${o.id}</span></div>
+        <div style="font-size:16px;color:#8b949e;margin-top:2px">${_esc(o.description||'')} · ${_esc(o.status||'')} · Matched tag: <span style="color:#58a6ff">${_esc(o.matched_tag||'')}</span></div>
+      </div>`
+    ).join('');
+
+    content.innerHTML = `
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:24px;font-weight:800;margin-bottom:4px">🗂️ Purchase Order — ${_esc(po.manufacturer||'Unknown')}</h2>
+          <div style="color:#8b949e;font-size:18px">PO# ${_esc(po.po_number||'—')} · Ordered ${_esc(po.order_date||'—')}</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button onclick="gbPrintPO(${po.id})" style="background:#1e293b;border:1px solid #334155;color:#60a5fa;font-size:17px;padding:8px 16px;border-radius:8px;cursor:pointer">🖨️ Print / Digital PO</button>
+          <button onclick="gbEmailScannedPO(${po.id})" style="background:#1e293b;border:1px solid #334155;color:#4ade80;font-size:17px;padding:8px 16px;border-radius:8px;cursor:pointer">📧 Email to Manufacturer</button>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
+        <div style="background:rgba(255,255,255,.03);border:1px solid #21262d;border-radius:10px;padding:16px">
+          <div style="font-size:16px;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px">PO Details</div>
+          ${[['Account #', po.account_number],['Date Required', po.date_required],['Submitted By', po.submitted_by]].map(([l,v])=>
+            `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #21262d;font-size:18px">
+              <span style="color:#8b949e">${l}</span><span style="font-weight:600">${_esc(v||'—')}</span>
+            </div>`).join('')}
+        </div>
+        ${po.has_image ? `<div style="background:rgba(255,255,255,.03);border:1px solid #21262d;border-radius:10px;padding:16px;text-align:center">
+          <div style="font-size:16px;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Original Scan</div>
+          <img src="${BACKEND}/api/gb/scanned-pos/${po.id}/image" alt="Original PO scan"
+            style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #30363d;cursor:pointer"
+            onclick="window.open(this.src,'_blank')">
+        </div>` : ''}
+      </div>
+
+      <div style="background:rgba(255,255,255,.03);border:1px solid #21262d;border-radius:10px;overflow:hidden;margin-bottom:${linkedOrders?'24px':'0'}">
+        <div style="padding:12px 16px;border-bottom:1px solid #21262d;font-size:17px;font-weight:700;color:#8b949e;text-transform:uppercase;letter-spacing:.4px">Line Items</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:17px">
+            <thead><tr style="background:rgba(255,255,255,.04)">
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Qty</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Description</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Item #</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Back/Style</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">S/B/T</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Frame</th>
+              <th style="padding:8px 12px;text-align:left;color:#8b949e;font-weight:600;border-bottom:1px solid #21262d">Tag</th>
+            </tr></thead>
+            <tbody>${itemRows || '<tr><td colspan="7" style="padding:20px;text-align:center;color:#8b949e">No items</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+
+      ${linkedOrders ? `<div style="margin-top:24px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:12px;color:#e6edf3">🔗 Linked Customer Orders</div>
+        ${linkedOrders}
+      </div>` : ''}
+    `;
+  } catch(e) {
+    content.innerHTML = `<div style="color:#f85149;font-size:18px;padding:20px">❌ ${e.message}</div>`;
+  }
+}
+
+function closePODetailModal() {
+  document.getElementById('pODetailModal').style.display = 'none';
+}
+
+// ── Print (digital PO in new tab) ─────────────────────────────────────────────
+function gbPrintPO(id) {
+  window.open(BACKEND + `/api/gb/scanned-pos/${id}/digital`, '_blank');
+}
+
+// ── Email scanned PO ──────────────────────────────────────────────────────────
+async function gbEmailScannedPO(id) {
+  // Try to get manufacturer email from manufacturers list
+  let toEmail = '';
+  const po = _gbPOs.find(p => p.id === id);
+  if (po && po.manufacturer && _gbManufacturers) {
+    const mfr = _gbManufacturers.find(m => m.name && m.name.toLowerCase() === (po.manufacturer||'').toLowerCase());
+    if (mfr && mfr.email) toEmail = mfr.email;
+  }
+  if (!toEmail) {
+    toEmail = prompt('Enter manufacturer email address:');
+    if (!toEmail) return;
+  } else {
+    if (!confirm(`Email PO to ${toEmail}?`)) return;
+  }
+
+  try {
+    const res  = await fetch(BACKEND + `/api/gb/scanned-pos/${id}/email`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({to_email: toEmail})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      toast(`✅ PO emailed to ${data.sent_to}`);
+    } else if (data.setup_needed) {
+      toast('⚠️ Email not configured — set GBF_EMAIL_ADDRESS and GBF_EMAIL_PASSWORD in Railway');
+    } else {
+      toast('❌ ' + (data.error || 'Email failed'));
+    }
+  } catch(e) {
+    toast('❌ ' + e.message);
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────────────────────
+async function gbDeletePO(id) {
+  if (!confirm('Delete this purchase order? This cannot be undone.')) return;
+  try {
+    const res  = await fetch(BACKEND + `/api/gb/scanned-pos/${id}`, {method:'DELETE'});
+    const data = await res.json();
+    if (data.ok) { toast('PO deleted'); gbLoadPOs(); }
+    else          toast('❌ ' + (data.error || 'Delete failed'));
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// END SCANNED PURCHASE ORDERS
+// ═══════════════════════════════════════════════════════════════════════════════
 
 // ===== SETUP WIZARD =====
 let _wizardMessages = [];
