@@ -2510,8 +2510,14 @@ function updateQBPanel() {
 function enterDemo() {
   // Check if already authenticated this session
   if (sessionStorage.getItem('lv_auth') === '1') {
-    _lockToGBF();
-    _dismissLanding();
+    const co = _getCompany();
+    if (co && co.demo_mode) {
+      _dismissLanding();
+      showSection('dashboard');
+    } else {
+      _lockToGBF();
+      _dismissLanding();
+    }
     return;
   }
   // Show PIN screen
