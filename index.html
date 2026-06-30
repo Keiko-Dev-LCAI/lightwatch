@@ -448,6 +448,9 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="nav" onclick="showSection('fieldtickets')" id="nav-fieldtickets">
       <span class="nav-icon">📷</span> Field Tickets
     </div>
+    <div class="nav" onclick="showSection('company-settings')" id="nav-company-settings">
+      <span class="nav-icon">⚙️</span> Company Settings
+    </div>
     <div class="nav gbf-only" onclick="showSection('orders')" id="nav-orders">
       <span class="nav-icon">📦</span> Orders
       <span class="nav-badge" id="ordersBadge" style="display:none">0</span>
@@ -910,6 +913,34 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="live-badge"><div class="live-dot"></div> Live</div>
       </div>
       <div class="port-grid" id="portGrid" style="grid-template-columns:repeat(2,1fr)"></div>
+    </div>
+
+    <!-- ═══ COMPANY SETTINGS — ALL COMPANIES ═══ -->
+    <div class="section" id="section-company-settings">
+      <div class="sec-header"><h2 class="sec-title">⚙️ Company Settings</h2></div>
+      <div style="max-width:600px">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
+          <h3 style="font-size:20px;margin-bottom:20px">Company Profile</h3>
+          <div style="display:grid;gap:16px">
+            <div><label class="form-label">Company Name</label><input id="cs-name" class="input" style="width:100%;margin-top:4px" placeholder="Your company name"></div>
+            <div><label class="form-label">Business Type</label><input id="cs-biztype" class="input" style="width:100%;margin-top:4px" placeholder="e.g. Field Service, Retail, Restaurant"></div>
+            <div><label class="form-label">Address</label><input id="cs-address" class="input" style="width:100%;margin-top:4px" placeholder="Street, City, State"></div>
+            <div><label class="form-label">Phone</label><input id="cs-phone" class="input" style="width:100%;margin-top:4px" placeholder="+1 555-000-0000"></div>
+            <div><label class="form-label">Logo Emoji</label><input id="cs-emoji" class="input" style="width:100%;margin-top:4px" placeholder="🔧 (one emoji)"></div>
+          </div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
+          <h3 style="font-size:20px;margin-bottom:16px">Change PIN</h3>
+          <div style="display:grid;gap:12px">
+            <div><label class="form-label">Current PIN</label><input id="cs-current-pin" type="password" class="input" style="width:100%;margin-top:4px" placeholder="Current PIN"></div>
+            <div><label class="form-label">New PIN</label><input id="cs-new-pin" type="password" class="input" style="width:100%;margin-top:4px" placeholder="New PIN (4+ digits)"></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn btn-primary" onclick="csSave()" id="cs-save-btn">Save Changes</button>
+          <span id="cs-status" style="font-size:18px;color:var(--green)"></span>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ FIELD TICKETS — ALL COMPANIES ═══ -->
@@ -2206,6 +2237,7 @@ function showSection(name) {
   if (name === 'calendar') loadCalendar();
   if (name === 'reports') { renderReportSection(); }
   if (name === 'docs')    { loadDocSection(); }
+  if (name === 'company-settings') { csLoad(); }
   // howto is static — no render needed
   closeSidebar();   // close mobile sidebar when any nav item tapped
 }
@@ -2590,6 +2622,57 @@ function _lockToGBF() {
     if (titleEl) titleEl.textContent = emoji + ' ' + co.name + ' — Orders';
     D.gb.name = co.name;
   }
+}
+
+// ===== COMPANY SETTINGS =====
+function csLoad() {
+  const co = _getCompany();
+  if (!co) return;
+  document.getElementById('cs-name').value    = co.name    || '';
+  document.getElementById('cs-biztype').value = co.type    || '';
+  document.getElementById('cs-address').value = co.address || '';
+  document.getElementById('cs-phone').value   = co.phone   || '';
+  document.getElementById('cs-emoji').value   = co.emoji   || '';
+}
+
+async function csSave() {
+  const co = _getCompany();
+  if (!co) { return; }
+  const pinVerify = document.getElementById('cs-current-pin').value.trim();
+  if (!pinVerify) { document.getElementById('cs-status').textContent = '⚠️ Enter your current PIN to save'; document.getElementById('cs-status').style.color='var(--yellow)'; return; }
+  const btn = document.getElementById('cs-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  const body = {
+    slug: co.slug, pin_verify: pinVerify,
+    name: document.getElementById('cs-name').value.trim(),
+    business_type: document.getElementById('cs-biztype').value.trim(),
+    address: document.getElementById('cs-address').value.trim(),
+    phone: document.getElementById('cs-phone').value.trim(),
+    emoji: document.getElementById('cs-emoji').value.trim()
+  };
+  const np = document.getElementById('cs-new-pin').value.trim();
+  if (np) body.new_pin = np;
+  try {
+    const res = await fetch(BACKEND + '/api/company/settings', { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.ok) {
+      // Update session storage with new values
+      const updated = {...co, name: body.name || co.name, type: body.business_type || co.type, address: body.address, phone: body.phone, emoji: body.emoji || co.emoji};
+      sessionStorage.setItem('lv_company', JSON.stringify(updated));
+      document.getElementById('cs-status').textContent = '✅ Saved!';
+      document.getElementById('cs-status').style.color = 'var(--green)';
+      document.getElementById('cs-current-pin').value = '';
+      document.getElementById('cs-new-pin').value = '';
+      if (np) { document.getElementById('cs-status').textContent = '✅ Saved — use new PIN next login'; }
+    } else {
+      document.getElementById('cs-status').textContent = '❌ ' + (data.error || 'Save failed');
+      document.getElementById('cs-status').style.color = 'var(--red)';
+    }
+  } catch(e) {
+    document.getElementById('cs-status').textContent = '❌ Connection error';
+    document.getElementById('cs-status').style.color = 'var(--red)';
+  }
+  btn.disabled = false; btn.textContent = 'Save Changes';
 }
 
 function lvLogout() {
