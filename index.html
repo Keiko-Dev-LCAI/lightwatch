@@ -451,17 +451,17 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="nav" onclick="showSection('company-settings')" id="nav-company-settings">
       <span class="nav-icon">⚙️</span> Company Settings
     </div>
-    <div class="nav gbf-only" onclick="showSection('orders')" id="nav-orders">
+    <div class="nav" onclick="showSection('orders')" id="nav-orders">
       <span class="nav-icon">📦</span> Orders
       <span class="nav-badge" id="ordersBadge" style="display:none">0</span>
     </div>
-    <div class="nav gbf-only" onclick="showSection('calendar')" id="nav-calendar">
+    <div class="nav" onclick="showSection('calendar')" id="nav-calendar">
       <span class="nav-icon">📅</span> Calendar
     </div>
-    <div class="nav gbf-only" onclick="showSection('docs')" id="nav-docs">
+    <div class="nav" onclick="showSection('docs')" id="nav-docs">
       <span class="nav-icon">📁</span> Documents
     </div>
-    <div class="nav gbf-only" onclick="showSection('adminnotes')" id="nav-adminnotes">
+    <div class="nav" onclick="showSection('adminnotes')" id="nav-adminnotes">
       <span class="nav-icon">📝</span> Visit Notes
     </div>
     <div class="sidebar-footer">
@@ -471,7 +471,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <span class="dot dot-green blink"></span>
         Mainnet Connected
       </div>
-      <button onclick="lvLogout()" style="margin-top:16px;width:100%;background:transparent;border:1px solid #30363d;color:#8b949e;padding:10px;border-radius:8px;font-size:17px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#f85149';this.style.color='#f85149'" onmouseout="this.style.borderColor='#30363d';this.style.color='#8b949e'">🚪 Log Out</button>
+      <button onclick="lvLogout()" style="margin-top:16px;width:100%;background:#1a1a2a;border:2px solid #f85149;color:#f85149;padding:14px;border-radius:8px;font-size:20px;font-weight:700;cursor:pointer">🚪 Log Out</button>
     </div>
   </nav>
 
@@ -921,24 +921,35 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div style="max-width:600px">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
           <h3 style="font-size:20px;margin-bottom:20px">Company Profile</h3>
-          <div style="display:grid;gap:16px">
-            <div><label class="form-label">Company Name</label><input id="cs-name" class="input" style="width:100%;margin-top:4px" placeholder="Your company name"></div>
-            <div><label class="form-label">Business Type</label><input id="cs-biztype" class="input" style="width:100%;margin-top:4px" placeholder="e.g. Field Service, Retail, Restaurant"></div>
-            <div><label class="form-label">Address</label><input id="cs-address" class="input" style="width:100%;margin-top:4px" placeholder="Street, City, State"></div>
-            <div><label class="form-label">Phone</label><input id="cs-phone" class="input" style="width:100%;margin-top:4px" placeholder="+1 555-000-0000"></div>
-            <div><label class="form-label">Logo Emoji</label><input id="cs-emoji" class="input" style="width:100%;margin-top:4px" placeholder="🔧 (one emoji)"></div>
+          <div style="display:grid;gap:20px">
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">Company Name</label><input id="cs-name" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="Your company name"></div>
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">Business Type</label><input id="cs-biztype" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="e.g. Field Service, Retail, Restaurant"></div>
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">Address</label><input id="cs-address" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="Street, City, State"></div>
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">Phone</label><input id="cs-phone" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="+1 555-000-0000"></div>
+            <div>
+              <label style="font-size:20px;font-weight:600;color:var(--text2)">Company Logo</label>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:16px">
+                <img id="cs-logo-preview" src="" alt="" style="width:80px;height:80px;border-radius:10px;object-fit:cover;border:1px solid var(--border);display:none">
+                <div id="cs-logo-placeholder" style="width:80px;height:80px;border-radius:10px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:36px">🏢</div>
+                <div>
+                  <input type="file" id="cs-logo-input" accept="image/*" style="display:none" onchange="csLogoPreview(this)">
+                  <button onclick="document.getElementById('cs-logo-input').click()" class="btn" style="font-size:18px;padding:10px 20px">📁 Upload Logo</button>
+                  <div style="font-size:16px;color:var(--text3);margin-top:6px">JPG, PNG — appears on invoices</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:20px">
           <h3 style="font-size:20px;margin-bottom:16px">Change PIN</h3>
-          <div style="display:grid;gap:12px">
-            <div><label class="form-label">Current PIN</label><input id="cs-current-pin" type="password" class="input" style="width:100%;margin-top:4px" placeholder="Current PIN"></div>
-            <div><label class="form-label">New PIN</label><input id="cs-new-pin" type="password" class="input" style="width:100%;margin-top:4px" placeholder="New PIN (4+ digits)"></div>
+          <div style="display:grid;gap:16px">
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">Current PIN</label><input id="cs-current-pin" type="password" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="Current PIN"></div>
+            <div><label style="font-size:20px;font-weight:600;color:var(--text2)">New PIN</label><input id="cs-new-pin" type="password" class="input" style="width:100%;margin-top:6px;font-size:22px;padding:12px" placeholder="New PIN (4+ digits)"></div>
           </div>
         </div>
-        <div style="display:flex;gap:12px;align-items:center">
-          <button class="btn btn-primary" onclick="csSave()" id="cs-save-btn">Save Changes</button>
-          <span id="cs-status" style="font-size:18px;color:var(--green)"></span>
+        <div style="display:flex;gap:16px;align-items:center">
+          <button class="btn btn-primary" onclick="csSave()" id="cs-save-btn" style="font-size:22px;padding:14px 32px">Save Changes</button>
+          <span id="cs-status" style="font-size:22px;color:var(--green)"></span>
         </div>
       </div>
     </div>
@@ -2192,23 +2203,16 @@ function switchEntity(val) {
   document.getElementById('aivm-btn').textContent = 'Analyze with AIVM →';
   document.getElementById('aivm-btn').disabled = false;
 
-  // Show/hide GB-only nav items
-  const ordersNav   = document.getElementById('nav-orders');
-  const calNav      = document.getElementById('nav-calendar');
-  const docsNav     = document.getElementById('nav-docs');
-  const portNav     = document.getElementById('nav-portfolio');
+  // All nav items always visible — no hiding
+  const portNav = document.getElementById('nav-portfolio');
   if (val === 'gb') {
-    ordersNav.style.display  = '';
-    calNav.style.display     = '';
-    if (docsNav) docsNav.style.display = '';
-    if (portNav) portNav.style.display = 'none';   // GB uses Orders section instead
+    if (portNav) portNav.style.display = 'none';
     loadOrders();
     gbLoadManufacturers();
-    // Start on Orders section for GB
     renderAll();
     showSection('orders');
   } else {
-    ordersNav.style.display  = 'none';
+    // dummy to keep else clause
     calNav.style.display     = 'none';
     if (docsNav) docsNav.style.display = 'none';
     if (portNav) portNav.style.display = '';
@@ -2625,6 +2629,20 @@ function _lockToGBF() {
 }
 
 // ===== COMPANY SETTINGS =====
+var _csLogoData = null;
+
+function csLogoPreview(input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    _csLogoData = e.target.result;
+    document.getElementById('cs-logo-preview').src = _csLogoData;
+    document.getElementById('cs-logo-preview').style.display = 'block';
+    document.getElementById('cs-logo-placeholder').style.display = 'none';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
 function csLoad() {
   const co = _getCompany();
   if (!co) return;
@@ -6616,7 +6634,7 @@ initQB();
 initGBBanner();
 loadAdminNotes();
 loadReminders();
-(function(){ var n = document.getElementById('nav-adminnotes'); if(n) n.style.display='block'; })();
+// All nav items are now always visible for all companies
 </script>
 
 <!-- Setup Wizard Modal -->
