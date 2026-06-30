@@ -2588,13 +2588,13 @@ function enterDemo() {
   // Check if already authenticated this session
   if (sessionStorage.getItem('lv_auth') === '1') {
     const co = _getCompany();
-    if (co && co.demo_mode) {
+    if (co && co.slug === 'gbf') {
+      _lockToGBF();
+      _dismissLanding();
+    } else {
       document.body.classList.remove('is-gbf');
       _dismissLanding();
       showSection('dashboard');
-    } else {
-      _lockToGBF();
-      _dismissLanding();
     }
     return;
   }
@@ -2840,15 +2840,16 @@ async function submitPin() {
       ps.style.transition = 'opacity 0.3s ease';
       ps.style.opacity = '0';
       setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
-      if (data.company && data.company.demo_mode) {
-        // Demo mode: ensure GBF is completely hidden
-        document.body.classList.remove('is-gbf');
-        _dismissLanding();
-        showSection('dashboard');
-      } else {
+      if (data.company && data.company.slug === 'gbf') {
+        // GBF only — show GBF sections and employee picker
         _lockToGBF();
         _dismissLanding();
         setTimeout(() => _showEmployeePicker(), 600);
+      } else {
+        // All other companies (demo, Disperato, etc.) — NO GBF content
+        document.body.classList.remove('is-gbf');
+        _dismissLanding();
+        showSection('dashboard');
       }
     } else {
       document.getElementById('pin-error').style.display = 'block';
