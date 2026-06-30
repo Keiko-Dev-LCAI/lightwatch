@@ -998,7 +998,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <!-- ═══ GREAT BRIDGE FURNITURE — ORDERS ═══ -->
     <div class="section" id="section-orders">
       <div class="sec-header">
-        <h2 class="sec-title" id="gbOrdersTitle">🛋️ Great Bridge Furniture — Orders</h2>
+        <h2 class="sec-title" id="gbOrdersTitle">Orders</h2>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button class="gb-scan-btn" onclick="gbScanTicket()">📷 Scan Ticket</button>
           <button class="btn" onclick="showAddOrderModal()" style="font-size:18px;padding:8px 18px">+ New Order</button>
@@ -1199,7 +1199,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="gb-chat-wrap">
           <div class="gb-chat-msgs" id="gbAskMsgs">
             <div class="gb-chat-row-ai">
-              <div class="gb-chat-bubble gb-chat-bubble-ai">👋 Hi David! I'm your AIVM business assistant. I have live access to your orders, inventory, and activity log. Ask me anything — like "who owes me money?", "what's overdue?", or "how many orders came in this month?"</div>
+              <div class="gb-chat-bubble gb-chat-bubble-ai">👋 Hi! I'm your AIVM business assistant. I have live access to your orders, inventory, and activity log. Ask me anything — like "who owes me money?", "what's overdue?", or "how many orders came in this month?"</div>
             </div>
           </div>
           <div class="gb-chat-input-row">
@@ -1344,7 +1344,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <!-- Chat messages -->
           <div id="assistantMessages" style="display:flex;flex-direction:column;gap:12px;min-height:220px;max-height:420px;overflow-y:auto">
             <div style="background:rgba(188,140,255,0.1);border:1px solid rgba(188,140,255,0.2);border-radius:10px;padding:14px 18px;font-size:18px;color:#e6edf3;line-height:1.6">
-              👋 Hi David! I'm here to help. Tell me what you need — reminders, schedule questions, or drafting a proposal. You can say things like:<br><br>
+              👋 Hi! I'm here to help. Tell me what you need — reminders, schedule questions, or drafting a proposal. You can say things like:<br><br>
               <em>"Remind me to call Mr. Jones at 3pm"</em><br>
               <em>"What time is the Smith delivery coming in?"</em><br>
               <em>"I need a proposal for John Doe, here are my notes…"</em>
@@ -1790,6 +1790,21 @@ tr:hover td{background:rgba(255,255,255,.02)}
 // ===== BACKEND =====
 const BACKEND = 'https://web-production-c7177.up.railway.app';
 
+// Helper: build a company-aware API URL
+// Appends ?company_slug=X for non-GBF companies so backend returns correct data
+function gbApi(path) {
+  var co = _getCompany();
+  if (!co || co.slug === 'gbf') return BACKEND + path;
+  var sep = path.indexOf('?') >= 0 ? '&' : '?';
+  return BACKEND + path + sep + 'company_slug=' + encodeURIComponent(co.slug);
+}
+
+// Helper: get current company display name
+function _coLabel() {
+  var co = _getCompany();
+  return co ? ((co.emoji || '🏢') + ' ' + (co.name || 'Company')) : 'Company';
+}
+
 // ===== COMPANY / FEATURE HELPERS =====
 function _getCompany() {
     try { return JSON.parse(sessionStorage.getItem('lv_company') || '{}'); }
@@ -1852,7 +1867,7 @@ function _getCurrentUser() {
 
 const D = {
   gb: {
-    name: 'Great Bridge Furniture',
+    name: (_getCompany && _getCompany() && _getCompany().slug==='gbf') ? 'Great Bridge Furniture' : (_getCompany ? (_getCompany().name||'Company') : 'Company'),
     industry: 'Retail Furniture',
     portfolio_label: 'Summary',
     overall: 'green',
@@ -2255,7 +2270,7 @@ function renderReportSection() {
   document.getElementById('gb-reports-panel').style.display    = isGB ? '' : 'none';
   document.getElementById('generic-reports-panel').style.display = isGB ? 'none' : '';
   document.getElementById('gbr-print-btn').style.display       = 'none';
-  document.getElementById('reports-title').textContent         = isGB ? '📋 Great Bridge Furniture Reports' : 'Generate Report';
+  document.getElementById('reports-title').textContent         = isGB ? ('📋 ' + _coLabel() + ' Reports') : 'Generate Report';
   _gbCurrentReport = null;
 }
 
@@ -3041,11 +3056,15 @@ function _gbUpdateDashboard() {
 }
 
 function loadOrders() {
+  // Update title with current company name
+  var titleEl = document.getElementById('gbOrdersTitle');
+  if (titleEl) titleEl.textContent = _coLabel() + ' — Orders';
+
   document.getElementById('gbOrdersLoading').style.display = '';
   document.getElementById('gbOrdersEmpty').style.display = 'none';
   document.getElementById('gbOrderTable').style.display = 'none';
 
-  fetch(BACKEND + '/api/gb/orders')
+  fetch(gbApi('/api/gb/orders'))
     .then(r => r.json())
     .then(data => {
       _gbOrders = data.orders || [];
@@ -3110,7 +3129,7 @@ function renderOrderTable() {
         <button class="gb-docs-btn" id="gbdocsbtn-${o.id}" onclick="gbToggleDocs(${o.id})">📎 Docs</button>
       </td>
       <td style="padding:12px 14px;white-space:nowrap">
-        ${o.ticket_doc_id ? `<a href="${BACKEND}/api/gb/docs/${o.ticket_doc_id}" target="_blank" title="View original ticket scan"
+        ${o.ticket_doc_id ? `<a href="' + gbApi('/api/gb/docs/${o.ticket_doc_id}" target="_blank" title="View original ticket scan"
           style="display:inline-block;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px;text-decoration:none">📷</a>` : ''}
         <button onclick="gbOpenProposal(${o.id})" title="Generate Proposal"
           style="background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">📄</button>
@@ -3118,7 +3137,7 @@ function renderOrderTable() {
           title="Send Purchase Order to manufacturer by email"
           style="display:inline-block;background:rgba(88,166,255,0.1);color:var(--blue);border:1px solid rgba(88,166,255,0.3);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px">
           ${o.po_sent_at ? '✅📧' : '📧'}</button>
-        <a href="${BACKEND}/api/gb/orders/${o.id}/po-preview" target="_blank"
+        <a href="' + gbApi('/api/gb/orders/${o.id}/po-preview" target="_blank"
           title="Print Purchase Order"
           style="display:inline-block;background:rgba(255,255,255,0.06);color:var(--muted,#888);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 12px;font-size:16px;cursor:pointer;margin-right:4px;text-decoration:none">🖨️</a>
         <button onclick="deleteOrder(${o.id}, '${(o.customer_name||'').replace(/'/g,"\\'")}')"
@@ -3140,7 +3159,7 @@ function renderOrderTable() {
 }
 
 function updateOrderStatus(orderId, newStatus) {
-  fetch(BACKEND + '/api/gb/orders/' + orderId, {
+  fetch(gbApi('/api/gb/orders/' + orderId, {
     method: 'PUT',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({status: newStatus, user_name: _getCurrentUser()})
@@ -3157,7 +3176,7 @@ function updateOrderStatus(orderId, newStatus) {
 
 function deleteOrder(orderId, customerName) {
   if (!confirm('Delete order for ' + customerName + '? This cannot be undone.')) return;
-  fetch(BACKEND + '/api/gb/orders/' + orderId, {
+  fetch(gbApi('/api/gb/orders/' + orderId, {
     method: 'DELETE',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({user_name: _getCurrentUser()})
@@ -3247,7 +3266,7 @@ function importSpreadsheetStep1() {
   const fd = new FormData();
   fd.append('file', input.files[0]);
 
-  fetch(BACKEND + '/api/gb/import-preview', { method: 'POST', body: fd })
+  fetch(gbApi('/api/gb/import-preview', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
@@ -3368,7 +3387,7 @@ function importSpreadsheetStep2() {
   fd.append('file', _gbPreviewFile);
   fd.append('column_map', JSON.stringify(colMap));
 
-  fetch(BACKEND + '/api/gb/import', { method: 'POST', body: fd })
+  fetch(gbApi('/api/gb/import', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.error && (!data.orders || data.orders.length === 0)) {
@@ -3425,7 +3444,7 @@ function saveImportedOrders() {
   btn.disabled = true;
   btn.textContent = 'Saving…';
 
-  fetch(BACKEND + '/api/gb/orders/save-import', {
+  fetch(gbApi('/api/gb/orders/save-import', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify({orders: _gbPendingImport, user_name: _getCurrentUser()})
@@ -3485,7 +3504,7 @@ function saveNewOrder() {
     user_name:     _getCurrentUser(),
   };
 
-  fetch(BACKEND + '/api/gb/orders', {
+  fetch(gbApi('/api/gb/orders', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
     body: JSON.stringify(order)
@@ -3500,7 +3519,7 @@ function saveNewOrder() {
           const tfd = new FormData();
           tfd.append('file', _gbPendingTicket, _gbPendingTicket.name);
           tfd.append('user_name', _getCurrentUser());
-          await fetch(BACKEND + '/api/gb/orders/' + data.id + '/set-ticket', {
+          await fetch(gbApi('/api/gb/orders/' + data.id + '/set-ticket', {
             method: 'POST', body: tfd
           });
           toast('✅ Order saved and ticket image attached!');
@@ -3526,7 +3545,7 @@ function getAttention() {
   btn.textContent = '⏳ Asking AIVM…';
   result.style.display = 'none';
 
-  fetch(BACKEND + '/api/gb/attention')
+  fetch(gbApi('/api/gb/attention')
     .then(r => r.json())
     .then(data => {
       btn.disabled = false;
@@ -3565,7 +3584,7 @@ function gbLoadDocs(orderId) {
   if (!listEl) return;
   listEl.innerHTML = '<span style="color:var(--text3);font-size:17px">Loading…</span>';
 
-  fetch(BACKEND + '/api/gb/orders/' + orderId + '/docs')
+  fetch(gbApi('/api/gb/orders/' + orderId + '/docs')
     .then(r => r.json())
     .then(data => {
       const docs = data.docs || [];
@@ -3584,7 +3603,7 @@ function gbLoadDocs(orderId) {
           <span style="background:var(--blue-bg);color:var(--blue);padding:3px 8px;border-radius:4px;font-size:16px;font-weight:700">${ext}</span>
           <span class="doc-name">${d.filename}</span>
           <span class="doc-meta">${ts}</span>
-          <a href="${BACKEND}/api/gb/docs/${d.id}" class="doc-dl" download="${d.filename}" target="_blank">⬇ Download</a>
+          <a href="' + gbApi('/api/gb/docs/${d.id}" class="doc-dl" download="${d.filename}" target="_blank">⬇ Download</a>
         </div>`;
       }).join('');
     })
@@ -3607,7 +3626,7 @@ function gbAttachDoc(orderId, input) {
   fd.append('file', file);
   fd.append('user_name', _getCurrentUser());
 
-  fetch(BACKEND + '/api/gb/orders/' + orderId + '/docs', { method: 'POST', body: fd })
+  fetch(gbApi('/api/gb/orders/' + orderId + '/docs', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.ok) {
@@ -3665,7 +3684,7 @@ function gbAnalyzeSheets() {
     fd.append('files', _gbSheetFiles[i]);
   }
 
-  fetch(BACKEND + '/api/gb/analyze-sheets', { method: 'POST', body: fd })
+  fetch(gbApi('/api/gb/analyze-sheets', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
       analyzeBtn.disabled = false;
@@ -3714,7 +3733,7 @@ function gbRestructureSheets(format) {
   }
   fd.append('format', format);
 
-  fetch(BACKEND + '/api/gb/restructure-sheets', { method: 'POST', body: fd })
+  fetch(gbApi('/api/gb/restructure-sheets', { method: 'POST', body: fd })
     .then(resp => {
       restructureBtn.disabled = false;
       if (csvBtn) csvBtn.disabled = false;
@@ -3757,7 +3776,7 @@ async function gbSearchCustomers() {
   resultsEl.innerHTML = '<div style="padding:12px;font-size:17px;color:var(--text2)">⏳ Searching…</div>';
 
   try {
-    const res  = await fetch(BACKEND + '/api/gb/search?q=' + encodeURIComponent(q));
+    const res  = await fetch(gbApi('/api/gb/search?q=' + encodeURIComponent(q));
     const data = await res.json();
     const list = data.customers || [];
 
@@ -3803,7 +3822,7 @@ async function gbLoadCustomerProfile(name, clickedEl) {
   profileEl.innerHTML = '<div style="padding:16px;font-size:17px;color:var(--text2)">⏳ Loading profile…</div>';
 
   try {
-    const res  = await fetch(BACKEND + '/api/gb/customers?name=' + encodeURIComponent(name));
+    const res  = await fetch(gbApi('/api/gb/customers?name=' + encodeURIComponent(name));
     const data = await res.json();
 
     const statusColor = s => {
@@ -3831,7 +3850,7 @@ async function gbLoadCustomerProfile(name, clickedEl) {
           <div style="display:flex;flex-direction:column;gap:4px;text-align:right">
             <span style="background:rgba(88,166,255,0.15);color:${statusColor(o.status)};padding:3px 8px;border-radius:4px;font-size:15px;font-weight:700">${o.status}</span>
             ${etaRow(o)}
-            ${o.doc_count > 0 ? `<a href="${BACKEND}/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 ${o.doc_count} doc${o.doc_count>1?'s':''}</a>` : ''}
+            ${o.doc_count > 0 ? `<a href="' + gbApi('/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 ${o.doc_count} doc${o.doc_count>1?'s':''}</a>` : ''}
           </div>
         </div>
         ${o.notes ? `<div style="font-size:15px;color:var(--text3);margin-top:6px;font-style:italic">${o.notes}</div>` : ''}
@@ -3841,7 +3860,7 @@ async function gbLoadCustomerProfile(name, clickedEl) {
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div style="flex:1;font-size:16px;color:var(--text2)">${Array.isArray(o.items) ? o.items.join(', ') : (o.items||'—')}</div>
         <span style="color:var(--green);font-size:15px;font-weight:700">✅ ${o.status}</span>
-        ${o.doc_count > 0 ? `<a href="${BACKEND}/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 docs</a>` : ''}
+        ${o.doc_count > 0 ? `<a href="' + gbApi('/api/gb/orders/${o.id}/docs" target="_blank" style="font-size:15px;color:var(--blue)">📎 docs</a>` : ''}
       </div>`).join('');
 
     const balColor = data.balance_due > 0 ? 'var(--yellow)' : 'var(--green)';
@@ -3914,7 +3933,7 @@ async function loadCalendar() {
   const lbl = document.getElementById('calMonthLabel');
   if(lbl) lbl.textContent = '…';
   try {
-    const r = await fetch(`${BACKEND}/api/gb/calendar?year=${_calYear}&month=${_calMonth}`);
+    const r = await fetch(`' + gbApi('/api/gb/calendar?year=${_calYear}&month=${_calMonth}`);
     const d = await r.json();
     _calEvents = {deliveries:[],arrivals:[],blocked:[],events:[],...d};
   } catch(e) {
@@ -4065,7 +4084,7 @@ function openCalDayModalForBlock(dateStr) {
 async function calUnblockDayId(blockId) {
   if(!confirm('Remove the block from this day?')) return;
   try {
-    const r=await fetch(BACKEND+'/api/gb/blocked-days/'+blockId,{method:'DELETE'});
+    const r=await fetch(gbApi('/api/gb/blocked-days/'+blockId,{method:'DELETE'});
     if(!r.ok) throw new Error();
     toast('✅ Block removed');
     loadCalendar();
@@ -4077,7 +4096,7 @@ async function calBlockDay() {
   const reason=document.getElementById('calBlockReason').value;
   const note=document.getElementById('calBlockNote').value.trim();
   try {
-    const r=await fetch(BACKEND+'/api/gb/blocked-days',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:_calClickedDate,reason,note})});
+    const r=await fetch(gbApi('/api/gb/blocked-days',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:_calClickedDate,reason,note})});
     if(!r.ok) throw new Error();
     toast('🚫 Day blocked: '+reason);
     closeCalDayModal();
@@ -4088,7 +4107,7 @@ async function calBlockDay() {
 async function calUnblockDay() {
   if(!_calClickedBlockId) return;
   try {
-    const r=await fetch(BACKEND+'/api/gb/blocked-days/'+_calClickedBlockId,{method:'DELETE'});
+    const r=await fetch(gbApi('/api/gb/blocked-days/'+_calClickedBlockId,{method:'DELETE'});
     if(!r.ok) throw new Error();
     toast('✅ Block removed');
     closeCalDayModal();
@@ -4153,9 +4172,9 @@ async function saveDelivery() {
   try {
     let r;
     if(_delEditId){
-      r=await fetch(BACKEND+'/api/gb/deliveries/'+_delEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      r=await fetch(gbApi('/api/gb/deliveries/'+_delEditId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     } else {
-      r=await fetch(BACKEND+'/api/gb/deliveries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      r=await fetch(gbApi('/api/gb/deliveries',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     }
     if(!r.ok) throw new Error();
     toast(_delEditId?'✅ Event updated':'✅ Event added');
@@ -4168,7 +4187,7 @@ async function deleteDelivery() {
   if(!_delEditId) return;
   if(!confirm('Delete this delivery event?')) return;
   try {
-    const r=await fetch(BACKEND+'/api/gb/deliveries/'+_delEditId,{method:'DELETE'});
+    const r=await fetch(gbApi('/api/gb/deliveries/'+_delEditId,{method:'DELETE'});
     if(!r.ok) throw new Error();
     toast('🗑️ Event deleted');
     closeDeliveryModal();
@@ -4181,7 +4200,7 @@ async function _calGetDayData(dateStr) {
   const [yr,mo]=dateStr.split('-').map(Number);
   if(_calYear===yr&&_calMonth===mo) return _calEvents;
   try {
-    const r=await fetch(`${BACKEND}/api/gb/calendar?year=${yr}&month=${mo}`);
+    const r=await fetch(`' + gbApi('/api/gb/calendar?year=${yr}&month=${mo}`);
     return await r.json();
   } catch { return {deliveries:[],arrivals:[],blocked:[],events:[]}; }
 }
@@ -4359,7 +4378,7 @@ function gbReport(type, period) {
   period = period || '';
   if (!_gbOrders || _gbOrders.length === 0) {
     document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⏳</div><div>Loading order data…</div></div>';
-    fetch(BACKEND + '/api/gb/orders').then(r=>r.json()).then(d=>{_gbOrders=d.orders||[];gbReport(type,period);}).catch(()=>{document.getElementById('reportOutput').innerHTML='<div class="report-placeholder"><div>⚠️</div><div>Could not load orders</div></div>';});
+    fetch(gbApi('/api/gb/orders').then(r=>r.json()).then(d=>{_gbOrders=d.orders||[];gbReport(type,period);}).catch(()=>{document.getElementById('reportOutput').innerHTML='<div class="report-placeholder"><div>⚠️</div><div>Could not load orders</div></div>';});
     return;
   }
   document.querySelectorAll('.rtype').forEach(r => r.classList.remove('sel'));
@@ -4615,7 +4634,7 @@ async function gbReportActivity() {
   document.getElementById('gbr-print-btn').style.display = 'none';
   document.getElementById('reportOutput').innerHTML = '<div class="report-placeholder"><div>⏳</div><div>Loading activity log…</div></div>';
   try {
-    const res  = await fetch(BACKEND + '/api/gb/activity?limit=200');
+    const res  = await fetch(gbApi('/api/gb/activity?limit=200');
     const data = await res.json();
     const log  = data.log || [];
     if (!log.length) {
@@ -5066,7 +5085,7 @@ let _gbEditingInvId = null;
 
 async function gbLoadInventory() {
   try {
-    const res = await fetch(BACKEND + '/api/gb/inventory');
+    const res = await fetch(gbApi('/api/gb/inventory');
     _gbInventory = await res.json();
     gbRenderInventory();
   } catch(e) {
@@ -5184,7 +5203,7 @@ async function gbSaveInventoryItem() {
     notes:             document.getElementById('gbInvNotes').value.trim(),
     user_name:         _getCurrentUser(),
   };
-  const url    = _gbEditingInvId ? BACKEND + '/api/gb/inventory/' + _gbEditingInvId : BACKEND + '/api/gb/inventory';
+  const url    = _gbEditingInvId ? gbApi('/api/gb/inventory/' + _gbEditingInvId : gbApi('/api/gb/inventory';
   const method = _gbEditingInvId ? 'PUT' : 'POST';
   try {
     await fetch(url, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
@@ -5396,7 +5415,7 @@ async function gbAskSend() {
   _gbAskFile = null;
 
   try {
-    const res = await fetch(BACKEND + '/api/gb/ask', {
+    const res = await fetch(gbApi('/api/gb/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -5565,7 +5584,7 @@ async function gbScanCreateNew() {
   try {
     const fd = new FormData();
     fd.append('image', file);
-    const res  = await fetch(BACKEND + '/api/gb/scan-ticket', { method: 'POST', body: fd });
+    const res  = await fetch(gbApi('/api/gb/scan-ticket', { method: 'POST', body: fd });
     const data = await res.json();
     overlay.style.display = 'none';
 
@@ -5592,7 +5611,7 @@ async function gbScanSearchCustomer(query) {
   const resultsEl = document.getElementById('scanCustomerResults');
   if (query.length < 2) { resultsEl.innerHTML = ''; return; }
   try {
-    const resp = await fetch(BACKEND + '/api/gb/search?q=' + encodeURIComponent(query));
+    const resp = await fetch(gbApi('/api/gb/search?q=' + encodeURIComponent(query));
     const data = await resp.json();
     const results = data.results || data.orders || [];
     resultsEl.innerHTML = results.length
@@ -5621,7 +5640,7 @@ async function gbScanAttachToOrder(orderId, customerName) {
   fd.append('user_name', _getCurrentUser ? _getCurrentUser() : '');
 
   try {
-    const res = await fetch(BACKEND + '/api/gb/orders/' + orderId + '/docs', { method: 'POST', body: fd });
+    const res = await fetch(gbApi('/api/gb/orders/' + orderId + '/docs', { method: 'POST', body: fd });
     if (!res.ok) throw new Error(res.statusText);
     gbCloseScanPreview();
     toast('✅ Ticket attached to ' + customerName + "'s order!");
@@ -5700,7 +5719,7 @@ async function gbBulkFilesSelected(input) {
 
   let results = [];
   try {
-    const res = await fetch(BACKEND + '/api/gb/bulk-scan', { method: 'POST', body: fd });
+    const res = await fetch(gbApi('/api/gb/bulk-scan', { method: 'POST', body: fd });
     const data = await res.json();
     if (data.error) throw new Error(data.error);
     results = data.results || [];
@@ -5791,7 +5810,7 @@ async function gbBulkSaveAll() {
         notes:         f.notes || '',
         user_name:     _getCurrentUser(),
       };
-      const saveRes  = await fetch(BACKEND + '/api/gb/orders', {
+      const saveRes  = await fetch(gbApi('/api/gb/orders', {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(order)
       });
       const saveData = await saveRes.json();
@@ -5802,7 +5821,7 @@ async function gbBulkSaveAll() {
         const tfd = new FormData();
         tfd.append('file', r.file, r.filename);
         tfd.append('user_name', _getCurrentUser());
-        await fetch(BACKEND + '/api/gb/orders/' + saveData.id + '/set-ticket', { method: 'POST', body: tfd });
+        await fetch(gbApi('/api/gb/orders/' + saveData.id + '/set-ticket', { method: 'POST', body: tfd });
       }
       saved++;
     } catch (e) {
@@ -5828,7 +5847,7 @@ async function gbBulkSaveAll() {
 let _gbManufacturers = [];
 
 function gbLoadManufacturers() {
-  fetch(BACKEND + '/api/gb/manufacturers')
+  fetch(gbApi('/api/gb/manufacturers')
     .then(r => r.json())
     .then(list => {
       _gbManufacturers = list;
@@ -5990,7 +6009,7 @@ function gbSaveMfr() {
     notes:          document.getElementById('gbMfrNotes').value.trim(),
   };
   if (!payload.name) { alert('Company name is required'); return; }
-  const url    = id ? BACKEND + '/api/gb/manufacturers/' + id : BACKEND + '/api/gb/manufacturers';
+  const url    = id ? gbApi('/api/gb/manufacturers/' + id : gbApi('/api/gb/manufacturers';
   const method = id ? 'PUT' : 'POST';
   fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)})
     .then(r => r.json())
@@ -6002,7 +6021,7 @@ function gbSaveMfr() {
 
 function gbDeleteMfr(id, name) {
   if (!confirm(`Delete ${name}? This cannot be undone.`)) return;
-  fetch(BACKEND + '/api/gb/manufacturers/' + id, {method:'DELETE'})
+  fetch(gbApi('/api/gb/manufacturers/' + id, {method:'DELETE'})
     .then(r => r.json())
     .then(data => { if (data.ok) { gbLoadManufacturers(); toast('Manufacturer deleted'); } });
 }
@@ -6028,7 +6047,7 @@ function gbMfrImportFileSelected(input) {
   document.getElementById('gbMfrImportStatus').textContent = 'Reading file with AI...';
   const fd = new FormData();
   fd.append('file', file, file.name);
-  fetch(BACKEND + '/api/gb/manufacturers/import', {method:'POST', body:fd})
+  fetch(gbApi('/api/gb/manufacturers/import', {method:'POST', body:fd})
     .then(r => r.json())
     .then(data => {
       if (!data.ok || !data.manufacturers || data.manufacturers.length === 0) {
@@ -6074,7 +6093,7 @@ async function gbMfrImportSave() {
   let saved = 0;
   for (const m of selected) {
     try {
-      const r = await fetch(BACKEND + '/api/gb/manufacturers', {
+      const r = await fetch(gbApi('/api/gb/manufacturers', {
         method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(m)
       });
       const d = await r.json();
@@ -6101,7 +6120,7 @@ function gbSendPO(orderId, mfrName) {
   }
 
   const user = _getCurrentUser ? _getCurrentUser() : 'Staff';
-  fetch(BACKEND + '/api/gb/orders/' + orderId + '/send-po', {
+  fetch(gbApi('/api/gb/orders/' + orderId + '/send-po', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({user_name: user, override_email: emailToUse})
@@ -6123,7 +6142,7 @@ function gbSendPO(orderId, mfrName) {
 // ===== PROPOSAL =====
 
 function gbOpenProposal(orderId) {
-  window.open(BACKEND + '/api/gb/proposal/' + orderId, '_blank');
+  window.open(gbApi('/api/gb/proposal/' + orderId, '_blank');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -6141,7 +6160,7 @@ async function gbLoadPOs() {
   document.getElementById('goPOsEmpty').style.display   = 'none';
   document.getElementById('goPOsTable').style.display   = 'none';
   try {
-    const res  = await fetch(BACKEND + '/api/gb/scanned-pos');
+    const res  = await fetch(gbApi('/api/gb/scanned-pos');
     const data = await res.json();
     _gbPOs = data.pos || [];
     _gbPopulatePOMfgFilter();
@@ -6240,7 +6259,7 @@ async function poRunExtract() {
     const fd   = new FormData();
     fd.append('image', blob, 'po.jpg');
 
-    const res  = await fetch(BACKEND + '/api/gb/scan-po', {method:'POST', body: fd});
+    const res  = await fetch(gbApi('/api/gb/scan-po', {method:'POST', body: fd});
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || 'Extract failed');
     _poExtracted = data.fields;
@@ -6307,7 +6326,7 @@ async function poSaveScanned() {
   const b64  = btoa(arr.reduce((d, b) => d + String.fromCharCode(b), ''));
 
   try {
-    const res  = await fetch(BACKEND + '/api/gb/scanned-pos', {
+    const res  = await fetch(gbApi('/api/gb/scanned-pos', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({...fields, image_b64: b64, image_type: _poBlobMime, image_filename: 'po.jpg'})
@@ -6383,7 +6402,7 @@ async function gbOpenPODetail(id) {
         </div>
         ${po.has_image ? `<div style="background:rgba(255,255,255,.03);border:1px solid #21262d;border-radius:10px;padding:16px;text-align:center">
           <div style="font-size:16px;color:#8b949e;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Original Scan</div>
-          <img src="${BACKEND}/api/gb/scanned-pos/${po.id}/image" alt="Original PO scan"
+          <img src="' + gbApi('/api/gb/scanned-pos/${po.id}/image" alt="Original PO scan"
             style="max-width:100%;max-height:220px;border-radius:6px;border:1px solid #30363d;cursor:pointer"
             onclick="window.open(this.src,'_blank')">
         </div>` : ''}
@@ -6543,7 +6562,7 @@ function updateReminderBadge(count) {
 // ===== LOAD REMINDERS =====
 async function loadReminders() {
   try {
-    var res = await fetch(BACKEND + '/api/gb/reminders');
+    var res = await fetch(gbApi('/api/gb/reminders');
     var data = await res.json();
     var list = document.getElementById('remindersList');
     var countEl = document.getElementById('reminderCount');
@@ -6571,11 +6590,11 @@ function _escH(s) {
 }
 
 async function markReminderDone(id) {
-  try { await fetch(BACKEND + '/api/gb/reminders/' + id + '/done', {method:'POST'}); loadReminders(); } catch(e) {}
+  try { await fetch(gbApi('/api/gb/reminders/' + id + '/done', {method:'POST'}); loadReminders(); } catch(e) {}
 }
 
 async function deleteReminder(id) {
-  try { await fetch(BACKEND + '/api/gb/reminders/' + id, {method:'DELETE'}); loadReminders(); } catch(e) {}
+  try { await fetch(gbApi('/api/gb/reminders/' + id, {method:'DELETE'}); loadReminders(); } catch(e) {}
 }
 
 // ===== ASSISTANT CHAT =====
@@ -6595,7 +6614,7 @@ async function assistantSend() {
   var thinking = _appendAMsg('bot', '⏳ Thinking…');
   try {
     var entity = (typeof currentEntity !== 'undefined') ? currentEntity : 'greatbridge';
-    var res = await fetch(BACKEND + '/api/gb/ask', {
+    var res = await fetch(gbApi('/api/gb/ask', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({question: msg, entity: entity})
