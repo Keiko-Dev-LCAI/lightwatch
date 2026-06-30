@@ -410,6 +410,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <span id="overallText">2 Active Alerts</span>
     </div>
   </div>
+  <button id="topbar-logout" onclick="lvLogout()" style="display:none;margin-left:auto;background:#c0392b;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:20px;font-weight:700;cursor:pointer;flex-shrink:0">🚪 Log Out</button>
 </div>
 
 <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="closeSidebar()"></div>
@@ -2597,6 +2598,7 @@ function enterDemo() {
       _dismissLanding();
     } else {
       document.body.classList.remove('is-gbf');
+      _applyCompanyMode(co);
       _dismissLanding();
       showSection('dashboard');
     }
@@ -2609,6 +2611,9 @@ function enterDemo() {
 }
 
 function _lockToGBF() {
+  // Show logout in header for GBF too
+  var logoutBtn = document.getElementById('topbar-logout');
+  if (logoutBtn) logoutBtn.style.display = 'block';
   // Mark body so all .gbf-only elements become visible
   document.body.classList.add('is-gbf');
   // Switch to GBF and hide company switcher + demo banner
@@ -2691,6 +2696,39 @@ async function csSave() {
     document.getElementById('cs-status').style.color = 'var(--red)';
   }
   btn.disabled = false; btn.textContent = 'Save Changes';
+}
+
+function _applyCompanyMode(co) {
+  if (!co) return;
+  var isDemo = co.slug === 'demo';
+  // Show logout button in header
+  var logoutBtn = document.getElementById('topbar-logout');
+  if (logoutBtn) logoutBtn.style.display = 'block';
+  // For demo mode: show entity switcher and simulation banner
+  // For real companies: hide them, show company name instead
+  var demoBanner = document.querySelector('.demo-banner');
+  var entityWrap = document.querySelector('.entity-wrap');
+  if (isDemo) {
+    if (demoBanner) demoBanner.style.display = '';
+    if (entityWrap) entityWrap.style.display = '';
+  } else {
+    // Real company — hide fake simulation controls
+    if (demoBanner) demoBanner.style.display = 'none';
+    if (entityWrap) entityWrap.style.display = 'none';
+    // Show company name in header
+    var logo = document.querySelector('.logo');
+    if (logo) logo.innerHTML = '<div class="logo-mark">' + (co.emoji || '🏢') + '</div>' + (co.name || 'LightView');
+    // Update dashboard title
+    var dashTitle = document.getElementById('dashTitle');
+    if (dashTitle) dashTitle.textContent = (co.emoji || '🏢') + ' ' + (co.name || 'Your Company');
+    // Hide the live simulation data stream — show setup prompt instead
+    var dataStream = document.querySelector('.stream-wrap, #streamWrap, .monitor-table, #monitorTable');
+    if (!dataStream) {
+      // Try to find and hide the data stream section
+      var streamSection = document.getElementById('section-stream');
+      if (streamSection) streamSection.style.display = 'none';
+    }
+  }
 }
 
 function lvLogout() {
@@ -2864,8 +2902,9 @@ async function submitPin() {
         _dismissLanding();
         setTimeout(() => _showEmployeePicker(), 600);
       } else {
-        // All other companies (demo, Disperato, etc.) — NO GBF content
+        // All other companies — show clean app, no GBF, no fake demo simulation
         document.body.classList.remove('is-gbf');
+        _applyCompanyMode(data.company);
         _dismissLanding();
         showSection('dashboard');
       }
