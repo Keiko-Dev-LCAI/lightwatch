@@ -463,6 +463,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <span class="dot dot-green blink"></span>
         Mainnet Connected
       </div>
+      <button onclick="lvLogout()" style="margin-top:16px;width:100%;background:transparent;border:1px solid #30363d;color:#8b949e;padding:10px;border-radius:8px;font-size:17px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#f85149';this.style.color='#f85149'" onmouseout="this.style.borderColor='#30363d';this.style.color='#8b949e'">🚪 Log Out</button>
     </div>
   </nav>
 
@@ -2535,6 +2536,11 @@ function _lockToGBF() {
     if (titleEl) titleEl.textContent = emoji + ' ' + co.name + ' — Orders';
     D.gb.name = co.name;
   }
+}
+
+function lvLogout() {
+  sessionStorage.clear();
+  location.reload();
 }
 
 function _dismissLanding() {
