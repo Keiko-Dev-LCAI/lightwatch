@@ -2626,9 +2626,15 @@ async function submitPin() {
       ps.style.transition = 'opacity 0.3s ease';
       ps.style.opacity = '0';
       setTimeout(() => { ps.style.display = 'none'; ps.style.opacity = '1'; }, 320);
-      _lockToGBF();
-      _dismissLanding();
-      setTimeout(() => _showEmployeePicker(), 600);
+      if (data.company && data.company.demo_mode) {
+        // Demo mode: show app without GBF data — no client sections, no employee picker
+        _dismissLanding();
+        showSection('dashboard');
+      } else {
+        _lockToGBF();
+        _dismissLanding();
+        setTimeout(() => _showEmployeePicker(), 600);
+      }
     } else {
       document.getElementById('pin-error').style.display = 'block';
       document.getElementById('pin-input').value = '';
